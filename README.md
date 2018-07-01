@@ -32,9 +32,9 @@ about controls, game elements, strategies, etc.
 * Game
     * game_datetime
     * game_mode
-* Game_data
-    * game(game_fk)
-    * participant(user_fk)
+* GameData
+    * game (fk-game)
+    * participant (fk-user)
     * score
     * fav_color
 
