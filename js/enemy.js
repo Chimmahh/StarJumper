@@ -1,0 +1,345 @@
+
+class Enemy extends Rectangle {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color)
+        this.vx = vx
+        this.vy = vy
+        this.target = target
+        this.move_cooldown = 30
+        this.shot_cooldown = 120
+        this.shots = []
+    }
+    keepDistanceX(min_x, max_x) {
+        let x_dist = Math.abs(this.cx() - this.target.cx())
+        if (!(x_dist > min_x && x_dist < max_x)) {
+            let dir_switch = x_dist > min_x ? 1 : -1                // INSIDE MIN_X, MOVE AWAY
+            this.x += this.vx * this.getDirX() * dir_switch
+            return true
+        }
+    }
+    proxyX() {
+        return Math.abs(this.cx() - this.target.cx())
+    }
+    proxyY() {
+        return Math.abs(this.cy() - this.target.cy())
+    }
+    getDirX() {
+        return this.cx() - this.target.cx() < 0 ? 1 : -1
+    }
+}
+
+class WhiteEnemy extends Enemy {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color, vx, vy, target)
+        this.fire_range_x = 600
+        this.fire_range_y = 80
+        this.segment = 0
+        this.segment_dir = 1
+        this.range_adj = Math.floor(Math.random() * 40)
+    }
+    update() {
+        if (this.move_cooldown < 0) {
+            this.keepDistanceX(150 + this.range_adj, 250 + this.range_adj)
+            ///// ALIGN Y WITHIN 10 PX /////
+            let ey = this.cy()
+            let ty = this.target.cy()
+            if (this.segment > 0) {
+                this.segment -= 1
+                this.y += this.vy * this.segment_dir
+            } else if (ey > ty + 10) {
+                this.y -= this.vy
+            } else if (ey < ty - 10) {
+                this.y += this.vy
+            } else {
+                this.segment = Math.floor(random(30, 50))
+                this.segment_dir = Math.random() < 0.5 ? 1 : -1
+            }
+        }
+    }
+}
+
+class RedEnemy extends Enemy {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color, vx, vy, target)
+        this.shot_cooldown = 999
+        this.jump_range_x = 300
+        this.vx_to_jump = 7
+        this.accel_vx = 0.1
+        this.jump_vy = -12
+        this.on_ground = false
+        this.charge_dir = 1
+    }
+    update(ground_y) {
+        ///// SET CHARGE DIRECTION/////
+        if (this.move_cooldown === 0) {
+            this.charge_dir = this.getDirX()
+        ///// CHARGE /////
+        } else if (this.move_cooldown < 0 && this.on_ground) {
+            this.x += this.vx * this.charge_dir
+            if (this.vx < this.vx_to_jump) this.vx += this.accel_vx
+            if (this.vx >= this.vx_to_jump) {
+                if (this.proxyX() < this.jump_range_x) {
+                    this.vy = this.jump_vy
+                    this.on_ground = false
+                } else if (this.move_cooldown < -240) {
+                    this.move_cooldown = 360
+                }
+            }
+        ///// AIRBORN /////
+        } else if (!this.on_ground) {
+            this.y += this.vy
+            this.vy += 0.4
+            this.vx *= 0.99
+            this.x += this.vx * this.charge_dir
+            if (this.y + this.vy + this.height > ground_y) {
+                this.on_ground = true
+                this.y = ground_y - this.height
+                this.vy = 0
+                this.move_cooldown = 300
+            }
+        ///// LANDED /////
+        } else {
+            if (this.move_cooldown > 210) {
+                this.x += this.vx * this.charge_dir
+                this.vx *= 0.97
+            } else if(this.move_cooldown === 210) {
+                this.shot_cooldown = Math.floor(random(120, 178))
+                this.vx = 0
+            }
+            if (this.shot_cooldown === -31 || this.shot_cooldown === -16 || this.shot_cooldown === -1) {
+                return true
+            }
+        }
+    }
+}
+
+class OrangeEnemy extends Enemy {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color, vx, vy, target)
+        this.move_ct = 20
+        this.segments = 5
+        this.direct_segment = 5
+    }
+    update() {
+        this.move_ct -= 1
+        if (this.move_cooldown < 0) {
+            if (this.move_ct < 0) {
+                ///// MOVE = 4-6 RANDOM LENGTHS BETWEEN 30-50 FRAMES /////
+                this.move_ct = Math.floor(random(30, 50))
+                this.segments -= 1
+                if (this.segments === 0) {
+                    this.segments = Math.floor(random(4, 7))  //  <-- SET 4-6 SEGMENTS INBETWEEN SHOTS
+                    this.move_cooldown = 31
+                    this.move_ct += 31
+                    ///// CHEAT TOWARDS PLAYER FOR 1 OF THESE SEGMENTS TO ENSURE ENEMY STAYS CLOSE /////
+                    this.direct_segment = Math.floor(Math.random() * this.segments) + 1
+                    return true
+                }
+                ///// IF FAR AWAY OR ITS THE CHEATER SEGMENT (AND ENEMY ISN'T SUPER CLOSE) /////
+                if (this.proxyX() > 500 || (this.segments === this.direct_segment && this.proxyX() > 150)) {
+                        this.vx = Math.abs(this.vx) * this.getDirX()
+                } else {
+                    if (Math.random() < 0.5) this.vx *= -1
+                }
+                if (this.y < 30) {
+                    this.vy = Math.abs(this.vy)
+                } else if (this.y > 250) {
+                    this.vy = -Math.abs(this.vy)
+                } else {
+                    if (Math.random() < 0.7) this.vy *= -1
+                }
+            }
+            this.x += this.vx
+            this.y += this.vy
+        }
+    }
+}
+
+class YellowEnemy extends Enemy {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color, vx, vy, target)
+        this.land_ct = 0
+        this.accel_y = 0.5
+    }
+    update(ground_y) {
+        this.land_ct -= 1
+        if (this.move_cooldown < 0) {
+            this.y += this.move_cooldown / 30
+            if ((this.y < 100 && Math.random < 0.02) || this.y < 20) {
+                this.vy = 0
+                this.land_ct = 50
+                this.move_cooldown = 360
+            }
+            return true
+        } else {
+            if (this.y + this.height < ground_y) {
+                this.y += this.vy
+                this.vy += this.accel_y * (50 - this.land_ct)
+            } else if (this.land_ct > 0) {
+                this.y = ground_y - this.height + 6
+            } else {
+                this.y = ground_y - this.height
+                return true
+           }
+        }
+    }
+}
+
+class GreenEnemy extends Enemy {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color, vx, vy, target)
+        this.on_ground = false
+        this.dir_x = 1
+        this.brakes = 1
+        this.accel_x = 0.06
+        this.shot_cooldown = 9999
+        this.shadows = []
+    }
+    update(ground_y, star_size) {
+        let right_dir = this.getDirX()
+        let proxy_x = this.proxyX()
+        this.x += this.vx
+        this.jump_timer -= 1
+        if (!this.on_ground) {
+            this.y += this.vy
+            this.vy += 0.4
+            if (this.y + this.vy + this.height > ground_y) {
+                this.on_ground = true
+                this.y = ground_y - this.height
+                this.vy = 0
+            }
+        } else if (proxy_x < 350) {
+            if (Math.abs(this.vx) > 6 && proxy_x < 150) {               ///// JUMP
+                this.vx /= 1.8
+                this.vy = -8 - Math.abs(this.vx)
+                this.y += this.vy
+                this.on_ground = false
+                this.jump_timer = 40
+            } else if (Math.abs(this.vx) > 3) {                         ///// ACCELERATE INTO JUMP
+                this.vx += this.accel_x * right_dir * 2
+            } else {                                                    ///// RETREAT
+                this.vx += -this.accel_x * right_dir * 2
+            }
+        } else {
+            this.vx += this.accel_x * right_dir
+            if (Math.abs(this.vx) < 0.07) {
+                this.shot_cooldown = Math.floor(random(35, 55))
+                this.vy = -random(12, 15)
+                this.y += this.vy
+                this.on_ground = false
+            } else {
+                this.shot_cooldown = 9999
+            }
+        }
+        if (this.jump_timer > 0) {
+            if (this.jump_timer % 5 === 0) {
+                let shadow = new Rectangle(this.x, this.y, this.width, this.height, 'lime')
+                shadow.life = 35
+                this.shadows.push(shadow)
+            }
+        }
+        for (let i=0; i<this.shadows.length; i++) {
+            if (this.shadows[i].width > star_size) this.shadows[i].width -= 0.5
+            if (this.shadows[i].height > star_size) this.shadows[i].height -= 0.5
+        }
+        return true
+
+
+        // } else if (this.proxyX() > 70) {
+        //     if (this.vx > 0 && right_dir === -1 || this.vx < 0 && right_dir === 1) {
+        //         this.brakes = 2
+        //     } else {
+        //         this.brakes = 1
+        //     }
+
+
+    }
+}
+
+class BlueEnemy extends Enemy {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color, vx, vy, target)
+        this.fire_range_x = 400
+        this.runaway_cooldown = 0
+        this.runaway_dir = 1
+        this.range_adj = Math.floor(Math.random() * 60)
+    }
+    update() {
+        this.runaway_cooldown -= 1
+        if (this.move_cooldown < 0) {
+            if (this.y < 30){
+                this.vy = random(0.2, 0.3)
+            } else if (this.y > 70 && this.vy > 0) {
+                this.vy = -random(0.4, 0.8)
+            }
+            if (this.runaway_cooldown > 0) {
+                this.x += this.vx * this.runaway_dir
+            } else if (this.keepDistanceX(200 + this.range_adj, 300 + this.range_adj)) {
+                this.y += this.vy
+            } else {
+                this.y += this.vy * 2
+            }
+        }
+    }
+    goodShot() {
+        let theta = Math.atan2(this.target.cy()-this.cy(),this.target.cx()-this.cx()) > 0
+        return theta > 0 && this.runaway_cooldown < -200 && this.proxyX() <= 300 + this.range_adj
+    }
+}
+
+class PurpleEnemy extends Enemy {
+    constructor(x, y, width, height, color, vx, vy, target) {
+        super(x, y, width, height, color, vx, vy, target)
+        this.accel_y = 0.2
+        this.get_away = false
+        this.falling = true
+        this.move_cooldown = 300
+        this.o_width = width
+        this.o_height = height
+    }
+    update(ground_y, portals) {
+        if (this.move_cooldown < 0) {
+            this.height = this.o_height
+            this.width = this.o_width
+            let closest_3_portals = this.getClosest3Portals(ground_y, portals)
+            let target_portal = closest_3_portals[Math.floor(Math.random()*3)]
+            let dx = target_portal.x - this.target.cx()
+            let dy = target_portal.y - this.target.cy()
+            let dist = Math.sqrt(dx**2 + dy**2)
+            this.x = target_portal.x + dx / dist * (target_portal.rad + this.width + 20)
+            this.y = target_portal.y + dy / dist * (target_portal.rad + this.height + 20)
+            this.vy = -1
+            this.falling = true
+            return true
+        } else if (this.y < ground_y - this.height) {
+            this.y += this.vy
+            this.vy += this.accel_y
+            if (!this.falling) this.x -= this.vx * this.getDirX()
+        } else if (this.move_cooldown < 40) {
+            this.x -= this.vx * this.getDirX()
+            this.width -= .6
+            this.x += .3
+            this.height -= .4
+            this.y = ground_y - this.height
+        } else {
+            this.x -= this.vx * this.getDirX()
+            this.y = ground_y - this.height - 0.01
+            this.vy = -random(1.5, 2.5)
+            this.falling = false
+        }
+
+    }
+    getClosest3Portals(ground_y, portals) {
+        let distances = []
+        for (let i=0; i<portals.length; i++) {
+            if (portals[i].y < ground_y - 50 && portals[i].y > 50) {
+                let dx = this.target.cx() - portals[i].x
+                let dy = this.target.cy() - portals[i].y
+                let dx_dy_sq = dx ** 2 + dy ** 2
+                distances.push([portals[i], dx_dy_sq])
+            }
+        }
+        distances.sort((a, b) => a[1] - b[1])
+        return [distances[0][0], distances[1][0], distances[2][0]]
+    }
+}
