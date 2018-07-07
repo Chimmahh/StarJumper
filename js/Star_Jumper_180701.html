@@ -1,0 +1,326 @@
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Star Jumper</title>
+    <!--<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">-->
+    <style>
+        body {
+            color: white;
+            background-color: black;
+            /*font-family: 'Open Sans', sans-serif;*/
+        }
+        #world_cnv {
+            /*background-image: url('whale_sulzenauer_big.jpg');*/
+        }
+        canvas {
+            border: 1px solid white;
+            background-size: 2400px 480px;
+            position: absolute;
+            top: 30px;
+            left: 30px;
+
+        }
+        button {
+            position: absolute;
+            top: 520px;
+            border-radius: 4px;
+            z-index: 10;
+        }
+        #modal_background {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 11; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            /*background-color: rgba(0, 0, 0, 0.4); !* Black w/ opacity *!*/
+        }
+        #instruction_modal_div {
+            position: fixed;
+            z-index: 12;
+            margin-left: -40%;
+            transition: margin-left 1s;
+            height: 300px;
+            width: 500px;
+            top: 50px;
+            border: 3px solid deepskyblue;
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #instruction_options_div {
+            display: flex;
+            text-align: center;
+        }
+        .option {
+            flex: 1;
+            margin: 5px;
+            border-radius: 4px;
+            border: 3px solid black;
+            background-color: deepskyblue;
+            font-size: 2em;
+            font-weight: bolder;
+            color: black;
+        }
+        #rules_option {
+            background-color: darkorchid;
+        }
+        .option:hover {
+            background: mediumblue !important;
+            cursor: pointer;
+        }
+        .instruction_border {
+            position: absolute;
+            transition: margin-left 1s;
+            width: 500px;
+        }
+        .instruction {
+            height: 220px;
+            margin: 5px;
+            margin-top: 0;
+            padding: 5px;
+            border-radius: 4px;
+            border: 3px solid black;
+            color: black;
+        }
+        #instruction_div {
+            display: flex;
+        }
+        #rules_border {
+            margin-left: 0%;
+        }
+        #controls_border {
+            margin-left: 100%;
+        }
+        #other_border {
+            margin-left: 200%;
+        }
+        #instruction_div > button {
+            position: absolute;
+            left: 450px;
+            top: 268px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="world_cnv" width="1200" height="500"></canvas>
+    <canvas id="sword_cnv" width="1200" height="500"></canvas>
+    <!--<canvas id="player_shots_cnv" width="1200" height="500"></canvas>-->
+    <!--<canvas id="enemy_attack_cnv" width="1200" height="500"></canvas>-->
+    <div id="modal_background"></div>
+    <div id="instruction_modal_div">
+        <div id="instruction_options_div">
+            <div id="rules_option" class="option">Rules</div>
+            <div id="controls_option" class="option">Controls</div>
+            <div id="other_option" class="option">Other</div>
+        </div>
+        <div id="instruction_div">
+            <div id="rules_border" class="instruction_border">
+                <div id="rules_div" class="instruction">
+                    The object of Star Jumper is (to be determined)...
+                </div>
+            </div>
+            <div id="controls_border" class="instruction_border">
+                <div id="controls_div" class="instruction">
+                    "A" / LEFT : go left<br>
+                    "D" / RIGHT : go right<br>
+                    "W" / UP : jump<br>
+                    "S" / SPACE : pick up & place star<br>
+                    LEFT CLICK : shoot star<br>
+                    RIGHT CLICK (ABOVE) : flip up attack<br>
+                    RIGHT CLICK (BELOW) : flip down attack
+                </div>
+            </div>
+            <div id="other_border" class="instruction_border">
+                <div id="other_div" class="instruction">
+                    Other Stuff
+                </div>
+            </div>
+            <button id="hide_modal_bt">Exit</button>
+        </div>
+    </div><br>
+    <button id="show_modal_bt">Rules</button>
+
+    <script>
+        let world_cnv = document.querySelector('#world_cnv')
+        let sword_cnv = document.querySelector('#sword_cnv')
+        // let player_shots_cnv = document.querySelector('#player_shots_cnv')
+        // let enemy_attack_cnv = document.querySelector('#enemy_attack_cnv')
+        let show_modal_bt = document.querySelector('#show_modal_bt')
+        let modal_background = document.querySelector('#modal_background')
+        let instruction_modal_div = document.querySelector('#instruction_modal_div')
+        let hide_modal_bt = document.querySelector('#hide_modal_bt')
+        let rules_option = document.querySelector('#rules_option')
+        let controls_option = document.querySelector('#controls_option')
+        let other_option = document.querySelector('#other_option')
+        let rules_border = document.querySelector('#rules_border')
+        let controls_border = document.querySelector('#controls_border')
+        let other_border = document.querySelector('#other_border')
+
+        show_modal_bt.onclick = () => {
+            modal_background.style.display = 'block'
+            instruction_modal_div.style.transition = 'margin-left 1s'
+            instruction_modal_div.style.marginLeft = '20%'
+            world.play = false
+        }
+        hide_modal_bt.onclick = () => {
+            rules_border.style.marginLeft = '0%'
+            controls_border.style.marginLeft = '100%'
+            other_border.style.marginLeft = '200%'
+            instruction_modal_div.style.transition = 'none'
+            instruction_modal_div.style.marginLeft = '-50%'
+            modal_background.style.display = 'none'
+            world.play = true
+            window.requestAnimationFrame(animation_loop)
+        }
+        rules_option.onclick = () => {
+            rules_option.style.backgroundColor = 'darkorchid'
+            rules_border.style.marginLeft = '0%'
+            controls_option.style.backgroundColor = 'deepskyblue'
+            controls_border.style.marginLeft = '100%'
+            other_option.style.backgroundColor = 'deepskyblue'
+            other_border.style.marginLeft = '200%'
+        }
+        controls_option.onclick = () => {
+            rules_option.style.backgroundColor = 'deepskyblue'
+            rules_border.style.marginLeft = '-100%'
+            controls_option.style.backgroundColor = 'darkorchid'
+            controls_border.style.marginLeft = '0%'
+            other_option.style.backgroundColor = 'deepskyblue'
+            other_border.style.marginLeft = '100%'
+        }
+        other_option.onclick = () => {
+            rules_option.style.backgroundColor = 'deepskyblue'
+            rules_border.style.marginLeft = '-200%'
+            controls_option.style.backgroundColor = 'deepskyblue'
+            controls_border.style.marginLeft = '-100%'
+            other_option.style.backgroundColor = 'darkorchid'
+            other_border.style.marginLeft = '0%'
+        }
+    </script>
+
+    <script type="text/javascript" src="color_parser.js"></script>
+    <script type="text/javascript" src="other.js"></script>
+    <script type="text/javascript" src="starjumper.js"></script>
+    <script type="text/javascript" src="enemy.js"></script>
+    <script type="text/javascript" src="world.js"></script>
+
+    <script>
+        let color_data = {
+                            //////// PLAYER ////////       //////// ENEMY ////////
+            'white':       {shot:           StarShot   ,   enemy:       WhiteEnemy,
+                            shot_speed:          6.0   ,   enemy_vx:           1.5,
+                            shot_cost:           6.0   ,   enemy_vy:           0.8,
+                            mx:                  2.5   ,   width:               10,
+                            shield:              0.0   ,   height:              20,
+                            bonus:            'none'  },
+            'red':         {shot:            RedShot   ,   enemy:         RedEnemy,
+                            shot_speed:          7.0   ,   enemy_vx:             0,     // X ACCELERATION IN CONSTRUCTOR
+                            shot_cost:          12.0   ,   enemy_vy:             0,     // Y JUMP SPEED IN CONSTRUCTOR
+                            mx:                  3.0   ,   width:               30,
+                            shield:              2.0   ,   height:              20,
+                            bonus:      'mediumblue'  },
+            'orange':      {shot:           StarShot   ,   enemy:      OrangeEnemy,
+                            shot_speed:          5.5   ,   enemy_vx:           1.5,
+                            shot_cost:          12.0   ,   enemy_vy:           0.8,
+                            mx:                  2.0   ,   width:               15,
+                            shield:              5.0   ,   height:              20,
+                            bonus:      'darkorchid'  },
+            'yellow':      {shot:         YellowShot   ,   enemy:      YellowEnemy,
+                            shot_speed:          8.0   ,   enemy_vx:             0,
+                            shot_cost:          10.0   ,   enemy_vy:             0,
+                            mx:                  3.5   ,   width:               15,
+                            shield:              2.0   ,   height:              30,
+                            bonus:       'limegreen'  },
+            'limegreen':   {shot:           StarShot   ,   enemy:       GreenEnemy,
+                            shot_speed:          9.0   ,   enemy_vx:           2.0,
+                            shot_cost:           8.0   ,   enemy_vy:           1.0,
+                            mx:                  3.5   ,   width:               15,
+                            shield:              2.0   ,   height:              10,
+                            bonus:          'yellow'  },
+            'mediumblue':  {shot:           BlueShot   ,   enemy:        BlueEnemy,
+                            shot_speed:          6.5   ,   enemy_vx:           1.5,
+                            shot_cost:          10.0   ,   enemy_vy:          -3.0,
+                            mx:                  2.5   ,   width:               30,
+                            shield:              4.0   ,   height:              10,
+                            bonus:             'red'  },
+            'darkorchid':  {shot:           StarShot   ,   enemy:      PurpleEnemy,
+                            shot_speed:          7.5   ,   enemy_vx:           1.5,
+                            shot_cost:           8.0   ,   enemy_vy:           0.8,
+                            mx:                  3.0   ,   width:               25,
+                            shield:              4.0   ,   height:              15,
+                            bonus:          'orange'  },
+        }
+
+        // KEY TRACKER STUFF ==============================================
+        class KeyTracker {
+            constructor() {
+                this.keys = []
+            }
+            keyDown(key) {
+                this.keys.push(key)
+            }
+            keyUp(key) {
+                this.keys = this.keys.filter(function(e) {
+                    return e !== key;
+                })
+            }
+            isKeyDown(key) {
+                return this.keys.indexOf(key) > -1
+            }
+        }
+
+        let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
+        let key_tracker = new KeyTracker()
+
+        document.addEventListener('keydown', (evt) => {
+            key_tracker.keyDown(evt.key)
+            if (evt.key === 'b') {                                                       /////  CHEAT - CYCLE COLOR
+                world.player.color = world.colors[color_index % world.colors.length]
+                world.player.shot_speed = color_data[world.player.color].shot_speed
+                world.player.shot_cost = color_data[world.player.color].shot_cost
+                world.player.mx = color_data[world.player.color].mx
+                world.player.rgb = new RGBColor(world.player.color)
+                color_index += 1
+            }
+            if (evt.key === 'g') {                                                       /////  CHEAT - GOD MODE
+                world.player.mx = 3.5
+                world.player.energy = 999
+                world.player.star_count = 999
+            }
+        })
+
+        document.addEventListener('keyup', (evt) => {
+            key_tracker.keyUp(evt.key);
+        })
+
+        let world = new World(world_cnv, sword_cnv)
+        let fpsInterval, startTime, now, then, elapsed
+
+        function animation_loop() {
+            if (world.play) window.requestAnimationFrame(animation_loop)
+            now = Date.now()
+            elapsed = now - then
+            if (elapsed > fpsInterval) {
+                then = now - (elapsed % fpsInterval)
+                world.update()
+                world.draw()
+            }
+            // if (!world.start) world.start = Date.now()
+            // world.current = Date.now()
+        }
+        function startAnimating(fps) {
+            fpsInterval = 1000 / fps
+            then = Date.now()
+            startTime = then
+            animation_loop()
+        }
+        startAnimating(80)
+    </script>
+</body>
+</html>
