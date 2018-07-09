@@ -1,8 +1,9 @@
 
 class World {
-    constructor(world_cnv, sword_cnv) {
+    constructor(world_cnv, sword_cnv, play_mode) {
         this.play = true
-        this.difficulty = 2         // 1 - 5
+        this.mode = play_mode
+        this.difficulty = 5         // 1 - 5
         this.world_cnv = world_cnv
         this.sword_cnv = sword_cnv
         this.world_ctx = world_cnv.getContext('2d')
@@ -93,7 +94,6 @@ class World {
                 let result = this.player.getFlipAttack(
                     e.clientX - this.cnv_rect.left - this.trans_x, e.clientY - this.cnv_rect.top, ground_boost)
                 if (result) {
-                    // this.sounds[Math.floor(Math.random() * this.sounds.length)].play()
                     this.player.sword_trail.push([])
                     this.player.sword_tip.x = this.player.cx()
                     this.player.sword_tip.y = this.player.cy()
@@ -101,37 +101,8 @@ class World {
             }
             return false
         }
+    }
 
-        ////// SOUNDS ///////
-        // this.sounds = []
-        // let my_sounds = [
-        //     'Neck Breaking-SoundBible.com-933536431.mp3',
-        //     'Punch_HD-Mark_DiAngelo-1718986183.mp3',
-        //     'Super Punch MMA-SoundBible.com-1869306362.mp3',
-        //     'Thwack Hit By Punch-SoundBible.com-872409685.mp3',
-        //     'Roundhouse Kick-SoundBible.com-1663225804.mp3',
-        //     'Spin Kick-SoundBible.com-1263586030.mp3',
-        //     'Kick-SoundBible.com-1331196005.mp3',
-        //     'Jab-SoundBible.com-1806727891.mp3',
-        //     'Upper Cut-SoundBible.com-1272257235.mp3',
-        //     'Right Cross-SoundBible.com-1721311663.mp3',
-        //     'Left Hook-SoundBible.com-516660386.mp3',
-        //     'Right Hook-SoundBible.com-1406389182.mp3'
-        // ]
-        // for (let i=0; i<my_sounds.length; i++) {
-        //     this.sounds.push(new Sound(my_sounds[i]))
-        // }
-    }
-    addEnemy(color) {
-        let y = random(50, this.height - this.ground_height - 50)
-        let x = random(300, this.width - 300)
-        while (Math.abs(this.player.cx() - x) < 200) {
-            x = random(300, this.width - 300)
-        }
-        let enemy = new color_data[color].enemy(
-            x, y, color_data[color].width, color_data[color].height, color, this.player)
-        this.enemies.push(enemy)
-    }
     update() {
         if (this.player.health === 0) this.play = false
         restart += 1
@@ -272,8 +243,141 @@ class World {
                 }
             }
         }
+        ///// BOUNCE POINT STAR //////
+        let is_ob_right = this.health_star.x + this.health_star.width > this.width
+        let is_ob_left = this.health_star.x < 0
+        if (is_ob_right || is_ob_left) this.health_star.vx *= -1
+        let is_ob_top = this.health_star.y > this.height - this.ground.height - this.star_size
+        let is_ob_bottom = this.health_star.y < 0
+        if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1
+        ///// IF RIDING ON HEALTH STAR /////
+        this.health_star.update()
+        if (this.player.staa_ridin) {
+            this.player_on_platform = true
+            this.player.x = this.health_star.x - (this.player.width - this.star_size) / 2
+            this.player.y = this.health_star.y - this.player.height
+            ///// PICK UP HEALTH STAR  /////
+            if (key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s') || key_tracker.isKeyDown(' ')) {
+                this.player.staa_ridin = false
+                this.player_on_platform = false
+                this.player.star_cooldown = 10
+                if (this.player.health < 10) this.player.health += 1
+                this.health_star.x = random(0, this.width - this.star_size)
+                this.health_star.y = random(0, this.height - this.star_size - this.ground_height)
+                this.health_star.setRandomVelocities()
+            }
+        ///// IF YOU LAND ON THE HEALTH STAR /////
+        } else if (this.player.landed(this.health_star) && !this.player.staa_ridin) {
+            this.player_on_platform = true
+            this.player.staa_ridin = true
+            this.player.flip_count = 0
+        ///// IF YOU ARE FLIPPING, UP OR DOWN /////
+        } else if (this.player.flip_count > 0) {
+            if (this.player.flip_type === 'up') {
+                this.player.vy -= 0.08
+            } else {
+                this.player.vy += 0.5
+            }
+            this.player.y += this.player.vy
+            if (this.player.y + this.player.height + this.ground.height >= this.height) {
+                this.player.y = this.height - this.player.height - this.ground.height
+                this.player.flip_count = 0
+            } else {
+                this.player.flip_count -= 1
+            }
+        ///// OTHERWISE CHECK NORMAL HITS /////
+        } else {
+            for (let i=0; i<this.platforms.length; i++) {
+                ///// LANDED ON STAR OR GROUND /////
+                if (this.player.landed(this.platforms[i])) {
+                    this.player.y = this.platforms[i].top() - this.player.height
+                    this.player.vy = 0
+                    this.player_on_platform = true
+                    ///// DOWN KEY = PICK UP STAR /////
+                    if ((key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s'))
+                        && this.platforms[i] !== this.ground && this.player.star_cooldown < 0) {
+                            this.player.star_cooldown = 10
+                            this.player.grabStar()
+                            this.platforms.splice(i, 1)
+                    }
+                    break
+                ///// CHECK HEAD BUMP /////
+                } else if (this.player.hitHead(this.platforms[i]) && this.player.vy < 0
+                    && this.platforms[i] !== this.ground && this.player.flip_count <= 0) {
+                        this.player.y = this.platforms[i].bottom() + 0.001
+                        this.player.vy = -0.015
+                        break
+                }
+            }
+        }
+        ///// UPDATE STAR SHOTS /////
+        for (let i=0; i<this.player.shots.length; i++) {
+            ///// UPDATE & BOUNCE SHOTS IN PLAY /////
+            if (this.player.shots[i].ground_timer === 0) {
+                ///// REMOVE EXPIRED STAR SHOTS
+                if (this.player.shots[i].life === 0) {
+                    this.player.shots.splice(i, 1)
+                } else {
+                    this.player.shots[i].update()
+                    if (this.player.shots[i].life < 30) {
+                        this.player.shots[i].width += 4 / this.player.shots[i].life
+                        this.player.shots[i].height += 4 / this.player.shots[i].life
+                        this.player.shots[i].x -= 2 / this.player.shots[i].life
+                        this.player.shots[i].y -= 2 / this.player.shots[i].life
+                    }
+                    ///// SLOW SHOTS IN PLAY /////
+                    this.player.shots[i].life -= 1
+                    this.player.shots[i].vx *= 0.994
+                    this.player.shots[i].vy *= 0.994
+                    this.player.shots[i].speed *= 0.994
+                    if (this.player.shots[i]) this.checkPurpleShot(this.player, this.player.shots[i], i)
+                }
+            ///// REMOVE INFLATED SHOTS THAT HAVE REACHED 1 /////
+            } else if (this.player.shots[i].ground_timer === 1) {
+                this.player.shots.splice(i, 1)
+            ///// INFLATE STARS THAT HAVE HIT GROUND /////
+            } else {
+                this.player.shots[i].ground_timer -= 1
+                this.player.shots[i].height += 0.6
+                this.player.shots[i].width += 0.6
+                this.player.shots[i].y = this.height - this.ground_height - this.player.shots[i].height
+                this.player.shots[i].x -= 0.3
+            }
+        }
+        ///// MID AIR SCENARIOS - NOT ON A PLATFORM OR HEALTH STAR, NOT FLIPPING /////
+        if (!this.player_on_platform && !this.player.staa_ridin && this.player.flip_count <= 0) {
+            this.player.vy += 0.25
+            this.player.y += this.player.vy
+            ///// CHECK GROUND BOUNCE /////
+            if (this.player.y + this.player.height + this.ground.height >= this.height) {
+                this.player.y = this.height - this.player.height - this.ground.height
+            }
+            ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
+            if ((key_tracker.isKeyDown(' ') || key_tracker.isKeyDown('s'))
+                && this.player.star_count > 0 && this.player.star_cooldown < 0) {
+                    let new_star_x = this.player.x + (this.player.width - this.star_size) / 2
+                    let new_star_y = this.player.y + this.player.height
+                    let star = new Rectangle(new_star_x, new_star_y, this.star_size, this.star_size, 'white')
+                    this.platforms.push(star)
+                    this.player.vy = 0
+                    this.player.star_cooldown = 10
+                    this.player.star_count -= 1
+            }
+        }
+        if (this.mode === 'survival') {
+            this.updateSingleSurvival()
+        } else if (this.mode === 'rumble') {
+            this.updateMultiRumble()
+        }
+    }
+
+    updateMultiRumble() {
+        let x = 1
+    }
+
+    updateSingleSurvival() {
         ///// ENEMIES /////
-        let enemy_add = Math.min(this.player.score / (11 - this.difficulty), this.difficulty * 5)
+        let enemy_add = Math.min(this.player.score / (7 - this.difficulty), this.difficulty * 5)
         if (this.enemies.length < 5 + enemy_add) this.addEnemy(this.colors[Math.floor(Math.random() * this.colors.length)])
         for (let i=0; i<this.enemies.length; i++) {
             let update_result = false
@@ -544,7 +648,7 @@ class World {
                         if (this.player.hurt_count < 0 && this.player.health > 0) {
                             if (this.enemies[i].shots[j].checkCollideRec(this.player)) {
                                 if (this.player.shield > 0) {
-                                    if (color_data[this.player.color].nemesis === this.enemies[i].o_color) {
+                                    if (color_data[this.player.color].nemesis === this.enemies[i].shots[j].color) {
                                         this.player.shield = 0
                                     } else {
                                         this.player.shield -= 1
@@ -581,128 +685,19 @@ class World {
             }
             if (this.enemies[i].dead && this.enemies[i].shots.length === 0) this.enemies.splice(i, 1)
         }
-        ///// BOUNCE POINT STAR //////
-        let is_ob_right = this.health_star.x + this.health_star.width > this.width
-        let is_ob_left = this.health_star.x < 0
-        if (is_ob_right || is_ob_left) this.health_star.vx *= -1
-        let is_ob_top = this.health_star.y > this.height - this.ground.height - this.star_size
-        let is_ob_bottom = this.health_star.y < 0
-        if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1
-        ///// IF RIDING ON HEALTH STAR /////
-        this.health_star.update()
-        if (this.player.staa_ridin) {
-            this.player_on_platform = true
-            this.player.x = this.health_star.x - (this.player.width - this.star_size) / 2
-            this.player.y = this.health_star.y - this.player.height
-            ///// PICK UP HEALTH STAR  /////
-            if (key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s') || key_tracker.isKeyDown(' ')) {
-                this.player.staa_ridin = false
-                this.player_on_platform = false
-                this.player.star_cooldown = 10
-                if (this.player.health < 10) this.player.health += 1
-                this.health_star.x = random(0, this.width - this.star_size)
-                this.health_star.y = random(0, this.height - this.star_size - this.ground_height)
-                this.health_star.setRandomVelocities()
-            }
-        ///// IF YOU LAND ON THE HEALTH STAR /////
-        } else if (this.player.landed(this.health_star) && !this.player.staa_ridin) {
-            this.player_on_platform = true
-            this.player.staa_ridin = true
-            this.player.flip_count = 0
-        ///// IF YOU ARE FLIPPING, UP OR DOWN /////
-        } else if (this.player.flip_count > 0) {
-            if (this.player.flip_type === 'up') {
-                this.player.vy -= 0.08
-            } else {
-                this.player.vy += 0.5
-            }
-            this.player.y += this.player.vy
-            if (this.player.y + this.player.height + this.ground.height >= this.height) {
-                this.player.y = this.height - this.player.height - this.ground.height
-                this.player.flip_count = 0
-            } else {
-                this.player.flip_count -= 1
-            }
-        ///// OTHERWISE CHECK NORMAL HITS /////
-        } else {
-            for (let i=0; i<this.platforms.length; i++) {
-                ///// LANDED ON STAR OR GROUND /////
-                if (this.player.landed(this.platforms[i])) {
-                    this.player.y = this.platforms[i].top() - this.player.height
-                    this.player.vy = 0
-                    this.player_on_platform = true
-                    ///// DOWN KEY = PICK UP STAR /////
-                    if ((key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s'))
-                        && this.platforms[i] !== this.ground && this.player.star_cooldown < 0) {
-                            this.player.star_cooldown = 10
-                            this.player.grabStar()
-                            this.platforms.splice(i, 1)
-                    }
-                    break
-                ///// CHECK HEAD BUMP /////
-                } else if (this.player.hitHead(this.platforms[i]) && this.player.vy < 0
-                    && this.platforms[i] !== this.ground && this.player.flip_count <= 0) {
-                        this.player.y = this.platforms[i].bottom() + 0.001
-                        this.player.vy = -0.015
-                        break
-                }
-            }
-        }
-        ///// UPDATE STAR SHOTS /////
-        for (let i=0; i<this.player.shots.length; i++) {
-            ///// UPDATE & BOUNCE SHOTS IN PLAY /////
-            if (this.player.shots[i].ground_timer === 0) {
-                ///// REMOVE EXPIRED STAR SHOTS
-                if (this.player.shots[i].life === 0) {
-                    this.player.shots.splice(i, 1)
-                } else {
-                    this.player.shots[i].update()
-                    if (this.player.shots[i].life < 30) {
-                        this.player.shots[i].width += 4 / this.player.shots[i].life
-                        this.player.shots[i].height += 4 / this.player.shots[i].life
-                        this.player.shots[i].x -= 2 / this.player.shots[i].life
-                        this.player.shots[i].y -= 2 / this.player.shots[i].life
-                    }
-                    ///// SLOW SHOTS IN PLAY /////
-                    this.player.shots[i].life -= 1
-                    this.player.shots[i].vx *= 0.994
-                    this.player.shots[i].vy *= 0.994
-                    this.player.shots[i].speed *= 0.994
-                    if (this.player.shots[i]) this.checkPurpleShot(this.player, this.player.shots[i], i)
-                }
-            ///// REMOVE INFLATED SHOTS THAT HAVE REACHED 1 /////
-            } else if (this.player.shots[i].ground_timer === 1) {
-                this.player.shots.splice(i, 1)
-            ///// INFLATE STARS THAT HAVE HIT GROUND /////
-            } else {
-                this.player.shots[i].ground_timer -= 1
-                this.player.shots[i].height += 0.6
-                this.player.shots[i].width += 0.6
-                this.player.shots[i].y = this.height - this.ground_height - this.player.shots[i].height
-                this.player.shots[i].x -= 0.3
-            }
-        }
-        ///// MID AIR SCENARIOS - NOT ON A PLATFORM OR HEALTH STAR, NOT FLIPPING /////
-        if (!this.player_on_platform && !this.player.staa_ridin && this.player.flip_count <= 0) {
-            this.player.vy += 0.25
-            this.player.y += this.player.vy
-            ///// CHECK GROUND BOUNCE /////
-            if (this.player.y + this.player.height + this.ground.height >= this.height) {
-                this.player.y = this.height - this.player.height - this.ground.height
-            }
-            ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
-            if ((key_tracker.isKeyDown(' ') || key_tracker.isKeyDown('s'))
-                && this.player.star_count > 0 && this.player.star_cooldown < 0) {
-                    let new_star_x = this.player.x + (this.player.width - this.star_size) / 2
-                    let new_star_y = this.player.y + this.player.height
-                    let star = new Rectangle(new_star_x, new_star_y, this.star_size, this.star_size, 'white')
-                    this.platforms.push(star)
-                    this.player.vy = 0
-                    this.player.star_cooldown = 10
-                    this.player.star_count -= 1
-            }
-        }
     }
+
+    addEnemy(color) {
+        let y = random(50, this.height - this.ground_height - 50)
+        let x = random(300, this.width - 300)
+        while (Math.abs(this.player.cx() - x) < 200) {
+            x = random(300, this.width - 300)
+        }
+        let enemy = new color_data[color].enemy(
+            x, y, color_data[color].width, color_data[color].height, color, this.player)
+        this.enemies.push(enemy)
+    }
+
     checkCTX(r) {
         if (r.width + r.height < 20) {
             ///// CHECK CENTER OF SMALL RECTANGLES /////
@@ -748,19 +743,19 @@ class World {
         }
         return false
     }
-    getCTXColor(r, g, b) {
-        if (r === g === b) {
-            return 'white'
-        } else if (r > 0 && g + b === 0) {
-            return 'red'
-        } else if (b > 0 && r + g === 0) {
+    getCTXColor(r, g, b) {                          // IF THE SWORD HITS A PLAYER OR A BULLET getCTXColor
+        if (r === g === b) {                        // DETERMINES THE COLOR OF THE SWORD TRAIL BASE ON
+            return 'white'                          // R, G, B RELATIONSHIPS. COLOR IS RETURNED FOR BULLET
+        } else if (r > 0 && g + b === 0) {          // REBOUND AND ENEMY DEATH BURST.......................
+            return 'red'                            // THIS APPROACH WAS NECESSARY BECAUSE THE GRADIENT OF
+        } else if (b > 0 && r + g === 0) {          // THE SWORD TRAIL RESULTS IN A RANGE OF R/G/B COMBOS.
             return 'mediumblue'
         } else if (r === g) {
             return 'yellow'
-        } else if (b === 0) {
-            return 'orange'
         } else if (r === b) {
             return 'limegreen'
+        } else if (b === 0) {
+            return 'orange'
         } else {
             return 'darkorchid'
         }
@@ -925,7 +920,18 @@ class World {
         this.world_ctx.translate(this.trans_x, 0)
         this.sword_ctx.translate(this.trans_x, 0)
 
-        for (let i=0; i<this.platforms.length; i++) {
+        let grd = this.world_ctx.createLinearGradient(0, 0, this.ground.width, this.ground.height)
+        grd.addColorStop("0", "#331900")
+        grd.addColorStop(".1", "darkgreen")
+        grd.addColorStop(".3", this.ground.color)
+        grd.addColorStop(".5", "limegreen")
+        grd.addColorStop(".7", this.ground.color)
+        grd.addColorStop(".9", "darkgreen")
+        grd.addColorStop("1", "#331900")
+        this.world_ctx.fillStyle = grd
+        this.world_ctx.fillRect(0, this.ground.y, this.width, this.height)
+
+        for (let i=1; i<this.platforms.length; i++) {
             this.platforms[i].draw(this.world_ctx)
         }
         for (let i=0; i<this.enemies.length; i++) {

@@ -45,20 +45,17 @@ about controls, game elements, strategies, etc.
     * All 6 shooting powers down, both for jumper and for enemy
     * Shot contact on enemies
     * Sword contact on enemy/enemy shots
-* Week 1
     * Build out Single Player Mode: stages, enemy AI
-    * Enemy contact on Star Jumper (varies by enemy)
+    * Enemy contact on Star Jumper
+* Still to do
     * Finish a rough draft of sprites
         * One color scheme for Star Jumper before replicating
-* Week 2
     * Fine tune Star Jumper sprite animations & replicate colors
     * Finish Single-Player mode functionality
     * Start Multi-Player mode
-* Week 3
     * Implement sprite animations
     * Finish Multi-Player mode
     * Start Laying out other pages
-* Week 4
     * Any last remaining game-play issues
     * Build out backend
     * Pretty up essential pages

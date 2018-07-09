@@ -11,16 +11,12 @@
             background-color: black;
             font-family: 'Press Start 2P', cursive;
         }
-        #world_cnv {
-            /*background-image: url('whale_sulzenauer_big.jpg');*/
-        }
         canvas {
             border: 1px solid white;
             background-size: 2400px 480px;
             position: absolute;
             top: 30px;
             left: 30px;
-
         }
         button {
             position: absolute;
@@ -190,8 +186,6 @@
     <script>
         let world_cnv = document.querySelector('#world_cnv')
         let sword_cnv = document.querySelector('#sword_cnv')
-        // let player_shots_cnv = document.querySelector('#player_shots_cnv')
-        // let enemy_attack_cnv = document.querySelector('#enemy_attack_cnv')
         let show_modal_bt = document.querySelector('#show_modal_bt')
         let modal_background = document.querySelector('#modal_background')
         let instruction_modal_div = document.querySelector('#instruction_modal_div')
@@ -245,10 +239,9 @@
             other_border.style.marginLeft = '0%'
         }
     </script>
-
     <script type="text/javascript" src="color_parser.js"></script>
     <script type="text/javascript" src="other.js"></script>
-    <script type="text/javascript" src="starjumper.js"></script>
+    <script type="text/javascript" src="star_jumper.js"></script>
     <script type="text/javascript" src="enemy.js"></script>
     <script type="text/javascript" src="world.js"></script>
 
@@ -292,24 +285,6 @@
                             shield:              3.0  },
         }
 
-        // KEY TRACKER STUFF ==============================================
-        class KeyTracker {
-            constructor() {
-                this.keys = []
-            }
-            keyDown(key) {
-                this.keys.push(key)
-            }
-            keyUp(key) {
-                this.keys = this.keys.filter(function(e) {
-                    return e !== key;
-                })
-            }
-            isKeyDown(key) {
-                return this.keys.indexOf(key) > -1
-            }
-        }
-
         let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
         let key_tracker = new KeyTracker()
 
@@ -337,8 +312,7 @@
             key_tracker.keyUp(evt.key);
         })
 
-        let world = new World(world_cnv, sword_cnv)
-        let fpsInterval, startTime, now, then, elapsed
+        let world, fpsInterval, startTime, now, then, elapsed
         let restart = 0
 
         function animation_loop() {
@@ -353,13 +327,15 @@
             // if (!world.start) world.start = Date.now()
             // world.current = Date.now()
         }
-        function start_loop(fps) {
+        function start_loop(fps, play_mode) {
+            world = new World(world_cnv, sword_cnv, play_mode)
             fpsInterval = 1000 / fps
             then = Date.now()
             startTime = then
             animation_loop()
         }
-        start_loop(80)
+
+        start_loop(80, 'survival')
     </script>
 </body>
 </html>

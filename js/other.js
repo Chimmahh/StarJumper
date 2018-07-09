@@ -40,6 +40,23 @@ function getClosestTarget(x, y, enemies) {
     return closest_enemy
 }
 
+class KeyTracker {
+    constructor() {
+        this.keys = []
+    }
+    keyDown(key) {
+        this.keys.push(key)
+    }
+    keyUp(key) {
+        this.keys = this.keys.filter(function(e) {
+            return e !== key;
+        })
+    }
+    isKeyDown(key) {
+        return this.keys.indexOf(key) > -1
+    }
+}
+
 class Rectangle {
     constructor(x, y, width, height, color) {
         this.x = x
