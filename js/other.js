@@ -303,5 +303,3 @@ class HealthStar extends Rectangle {
 //         this.sound.pause();
 //     }
 // }
-
-

@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Star Jumper</title>
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
     <!--<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">-->
     <style>
         body {
             color: white;
             background-color: black;
-            /*font-family: 'Open Sans', sans-serif;*/
+            font-family: 'Press Start 2P', cursive;
         }
         #world_cnv {
             /*background-image: url('whale_sulzenauer_big.jpg');*/
@@ -23,7 +24,8 @@
         }
         button {
             position: absolute;
-            top: 520px;
+            top: 540px;
+            left: 30px;
             border-radius: 4px;
             z-index: 10;
         }
@@ -36,7 +38,7 @@
             width: 100%; /* Full width */
             height: 100%; /* Full height */
             overflow: auto; /* Enable scroll if needed */
-            /*background-color: rgba(0, 0, 0, 0.4); !* Black w/ opacity *!*/
+            background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
         }
         #instruction_modal_div {
             position: fixed;
@@ -61,7 +63,8 @@
             border-radius: 4px;
             border: 3px solid black;
             background-color: deepskyblue;
-            font-size: 2em;
+            font-size: 1em;
+            padding: 5px;
             font-weight: bolder;
             color: black;
         }
@@ -78,7 +81,7 @@
             width: 500px;
         }
         .instruction {
-            height: 220px;
+            height: 235px;
             margin: 5px;
             margin-top: 0;
             padding: 5px;
@@ -90,18 +93,39 @@
             display: flex;
         }
         #rules_border {
-            margin-left: 0%;
+            margin-left: 0;
         }
         #controls_border {
             margin-left: 100%;
+        }
+        #controls_outter_div {
+            display: flex;
+            flex-direction: column;
+        }
+        .controls_row {
+            flex: 1;
+            display: inline-flex;
+        }
+        .controls_row:not(:last-child) {
+            border-bottom: 2px solid grey;
+        }
+        .controls_col_1 {
+            flex: 3;
+            padding: 10px;
+            border-right: 2px solid grey;
+        }
+        .controls_col_2 {
+            flex: 4;
+            padding: 10px;
         }
         #other_border {
             margin-left: 200%;
         }
         #instruction_div > button {
             position: absolute;
-            left: 450px;
+            left: 420px;
             top: 268px;
+            font-family: 'Press Start 2P', cursive;
         }
     </style>
 </head>
@@ -126,14 +150,31 @@
                 </div>
             </div>
             <div id="controls_border" class="instruction_border">
-                <div id="controls_div" class="instruction">
-                    "A" / LEFT : go left<br>
-                    "D" / RIGHT : go right<br>
-                    "W" / UP : jump<br>
-                    "S" / SPACE : pick up & place star<br>
-                    LEFT CLICK : shoot star<br>
-                    RIGHT CLICK (ABOVE) : flip up attack<br>
-                    RIGHT CLICK (BELOW) : flip down attack
+                <div id="controls_outter_div" class="instruction">
+                    <div class="controls_row">
+                        <div class="controls_col_1">"A"/LEFT</div>
+                        <div class="controls_col_2">Go left</div>
+                    </div>
+                    <div class="controls_row">
+                        <div class="controls_col_1">"D"/RIGHT</div>
+                        <div class="controls_col_2">Go right</div>
+                    </div>
+                    <div class="controls_row">
+                        <div class="controls_col_1">"W"/UP</div>
+                        <div class="controls_col_2">Jump</div>
+                    </div>
+                    <div class="controls_row">
+                        <div class="controls_col_1">"S"/SPACE</div>
+                        <div class="controls_col_2">Grab/place star</div>
+                    </div>
+                    <div class="controls_row">
+                        <div class="controls_col_1">LEFT CLICK</div>
+                        <div class="controls_col_2">Shoot star</div>
+                    </div>
+                    <div class="controls_row">
+                        <div class="controls_col_1">RIGHT CLICK</div>
+                        <div class="controls_col_2">Flip attack</div>
+                    </div>
                 </div>
             </div>
             <div id="other_border" class="instruction_border">
@@ -167,6 +208,7 @@
             instruction_modal_div.style.transition = 'margin-left 1s'
             instruction_modal_div.style.marginLeft = '20%'
             world.play = false
+            restart = 0
         }
         hide_modal_bt.onclick = () => {
             rules_border.style.marginLeft = '0%'
@@ -214,47 +256,40 @@
         let color_data = {
                             //////// PLAYER ////////       //////// ENEMY ////////
             'white':       {shot:           StarShot   ,   enemy:       WhiteEnemy,
-                            shot_speed:          6.0   ,   enemy_vx:           1.5,
-                            shot_cost:           6.0   ,   enemy_vy:           0.8,
-                            mx:                  2.5   ,   width:               10,
-                            shield:              0.0   ,   height:              20,
-                            bonus:            'none'  },
+                            shot_speed:          6.0   ,   width:               10,
+                            shot_cost:           6.0   ,   height:              20,
+                            mx:                  2.5   ,   nemesis:         'none',
+                            shield:              1.0  },
             'red':         {shot:            RedShot   ,   enemy:         RedEnemy,
-                            shot_speed:          7.0   ,   enemy_vx:             0,     // X ACCELERATION IN CONSTRUCTOR
-                            shot_cost:          12.0   ,   enemy_vy:             0,     // Y JUMP SPEED IN CONSTRUCTOR
-                            mx:                  3.0   ,   width:               30,
-                            shield:              2.0   ,   height:              20,
-                            bonus:      'mediumblue'  },
+                            shot_speed:          7.0   ,   width:               30,
+                            shot_cost:          12.0   ,   height:              20,
+                            mx:                  3.0   ,   nemesis:   'mediumblue',
+                            shield:              2.0  },
             'orange':      {shot:           StarShot   ,   enemy:      OrangeEnemy,
-                            shot_speed:          5.5   ,   enemy_vx:           1.5,
-                            shot_cost:          12.0   ,   enemy_vy:           0.8,
-                            mx:                  2.0   ,   width:               15,
-                            shield:              5.0   ,   height:              20,
-                            bonus:      'darkorchid'  },
+                            shot_speed:          5.5   ,   width:               15,
+                            shot_cost:          12.0   ,   height:              20,
+                            mx:                  2.0   ,   nemesis:   'darkorchid',
+                            shield:              5.0  },
             'yellow':      {shot:         YellowShot   ,   enemy:      YellowEnemy,
-                            shot_speed:          8.0   ,   enemy_vx:             0,
-                            shot_cost:          10.0   ,   enemy_vy:             0,
-                            mx:                  3.5   ,   width:               15,
-                            shield:              2.0   ,   height:              30,
-                            bonus:       'limegreen'  },
+                            shot_speed:          8.0   ,   width:               15,
+                            shot_cost:           8.0   ,   height:              30,
+                            mx:                  3.5   ,   nemesis:    'limegreen',
+                            shield:              2.0  },
             'limegreen':   {shot:           StarShot   ,   enemy:       GreenEnemy,
-                            shot_speed:          9.0   ,   enemy_vx:           2.0,
-                            shot_cost:           8.0   ,   enemy_vy:           1.0,
-                            mx:                  3.5   ,   width:               15,
-                            shield:              2.0   ,   height:              10,
-                            bonus:          'yellow'  },
+                            shot_speed:          9.0   ,   width:               15,
+                            shot_cost:          10.0   ,   height:              10,
+                            mx:                  3.5   ,   nemesis:       'yellow',
+                            shield:              2.0  },
             'mediumblue':  {shot:           BlueShot   ,   enemy:        BlueEnemy,
-                            shot_speed:          6.5   ,   enemy_vx:           1.5,
-                            shot_cost:          10.0   ,   enemy_vy:          -3.0,
-                            mx:                  2.5   ,   width:               30,
-                            shield:              4.0   ,   height:              10,
-                            bonus:             'red'  },
+                            shot_speed:          6.5   ,   width:               30,
+                            shot_cost:          10.0   ,   height:              10,
+                            mx:                  2.5   ,   nemesis:          'red',
+                            shield:              3.0  },
             'darkorchid':  {shot:           StarShot   ,   enemy:      PurpleEnemy,
-                            shot_speed:          7.5   ,   enemy_vx:           1.5,
-                            shot_cost:           8.0   ,   enemy_vy:           0.8,
-                            mx:                  3.0   ,   width:               25,
-                            shield:              4.0   ,   height:              15,
-                            bonus:          'orange'  },
+                            shot_speed:          7.5   ,   width:               25,
+                            shot_cost:           8.0   ,   height:              15,
+                            mx:                  3.0   ,   nemesis:       'orange',
+                            shield:              3.0  },
         }
 
         // KEY TRACKER STUFF ==============================================
@@ -283,15 +318,18 @@
             if (evt.key === 'b') {                                                       /////  CHEAT - CYCLE COLOR
                 world.player.color = world.colors[color_index % world.colors.length]
                 world.player.shot_speed = color_data[world.player.color].shot_speed
+                world.player.shield = color_data[world.player.color].shield
                 world.player.shot_cost = color_data[world.player.color].shot_cost
                 world.player.mx = color_data[world.player.color].mx
                 world.player.rgb = new RGBColor(world.player.color)
                 color_index += 1
             }
             if (evt.key === 'g') {                                                       /////  CHEAT - GOD MODE
-                world.player.mx = 3.5
-                world.player.energy = 999
-                world.player.star_count = 999
+                world.player.mx = 4
+                world.player.energy = 100
+                world.player.star_count = 50
+                world.player.health = 10
+                world.player.shield = color_data[world.player.color].shield
             }
         })
 
@@ -301,6 +339,7 @@
 
         let world = new World(world_cnv, sword_cnv)
         let fpsInterval, startTime, now, then, elapsed
+        let restart = 0
 
         function animation_loop() {
             if (world.play) window.requestAnimationFrame(animation_loop)

@@ -10,13 +10,14 @@ class StarJumper extends Rectangle {
         this.staa_ridin = false
         this.hurt_count = 0
         this.last_teleport = {}
+        this.display_shield_ct = 0
         this.score = 0
-        this.base_health = 100
-        this.health = 100
+        this.base_health = 10
+        this.health = 10
+        this.shield = 2
         this.base_energy = 100
         this.energy = 100
         this.shots = []
-        this.shot_trails = []
         this.sword_tip = {x:0, y:0}
         this.sword_trail = []
         this.flip_duration = 60
@@ -27,7 +28,7 @@ class StarJumper extends Rectangle {
     }
     draw(world_ctx, sword_ctx, ground_y) {
         let draw_me = true
-        if (this.hurt_count > 60 && this.hurt_count % 3 != 0) {
+        if (this.hurt_count > 60 && this.hurt_count % 3 !== 0) {
             draw_me = false
         } else if (this.hurt_count > 0 && this.hurt_count % 2 === 0) {
             draw_me = false
@@ -48,6 +49,13 @@ class StarJumper extends Rectangle {
             }
             world_ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height)
             world_ctx.restore()
+        }
+        if (this.hurt_count > 0 || this.display_shield_ct > 0 || this.shield === 0) {
+            world_ctx.font = 'bold 32px Arial'
+            world_ctx.fillStyle = this.color
+            world_ctx.fillText('🛡', this.x - 6, this.y - 7)
+            world_ctx.font = 'bold 18px Arial'
+            world_ctx.fillText(this.shield, this.x + 5.5, this.y - 10)
         }
         ///// FLIPPING === SWORD SEQUENCE /////
         if (this.flip_count > 0) {
@@ -126,7 +134,6 @@ class StarJumper extends Rectangle {
                             && poly_path.tip[i].y > ground_y - this.height
                             && i === poly_path.tip.length - 1) {
                             sword_ctx.lineTo(poly_path.tip[i].x, ground_y)
-                            // console.log(world.sword_ctx_data)
                         } else {
                             sword_ctx.lineTo(poly_path.tip[i].x, poly_path.tip[i].y)
                         }
@@ -173,8 +180,8 @@ class StarJumper extends Rectangle {
         if (this.energy > 100) this.energy = 100
     }
     getFlipAttack(x_click, y_click, ground_boost) {
-        let dx = x_click - this.x + this.width / 2
-        let dy = y_click - this.y
+        let dx = x_click - this.cx()
+        let dy = y_click - this.cy()
         if (dx > 0 && dy > 0 && this.energy >= 25) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'clockwise'
