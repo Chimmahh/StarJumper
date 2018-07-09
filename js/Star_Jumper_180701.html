@@ -292,6 +292,24 @@
                             shield:              3.0  },
         }
 
+        let simple_color = {
+            r152_g49_b204: 'darkorchid',
+            r153_g50_b203: 'darkorchid',
+            r153_g50_b204: 'darkorchid',
+            r153_g50_b205: 'darkorchid',
+            r49_g204_b49: 'limegreen',
+            r49_g205_b49: 'limegreen',
+            r50_g204_b50: 'limegreen',
+            r0_g0_b204: 'mediumblue',
+            r0_g0_b205: 'mediumblue',
+            r255_g163_b0: 'orange',
+            r255_g164_b0: 'orange',
+            r255_g165_b0: 'orange',
+            r255_g0_b0: 'red',
+            r255_g255_b255: 'white',
+            r255_g255_b0: 'yellow'
+        }
+
         // KEY TRACKER STUFF ==============================================
         class KeyTracker {
             constructor() {
@@ -353,13 +371,13 @@
             // if (!world.start) world.start = Date.now()
             // world.current = Date.now()
         }
-        function startAnimating(fps) {
+        function start_loop(fps) {
             fpsInterval = 1000 / fps
             then = Date.now()
             startTime = then
             animation_loop()
         }
-        startAnimating(80)
+        start_loop(80)
     </script>
 </body>
 </html>

@@ -353,6 +353,21 @@ class World {
                 if (sword_hit) {
                     this.enemies[i].dead = true
                     this.player.score += 1
+                    if (this.enemies[i].y + this.enemies[i].height < this.ground.y) {
+                        let rad = Math.PI * Math.random() * 2
+                        for (let j = 0; j < 3; j++) {
+                            let vel_vect = {
+                                vx: Math.cos(rad + j * Math.PI * 2 / 3),
+                                vy: Math.sin(rad + j * Math.PI * 2 / 3)
+                            }
+                            let burst = new StarShot(this.enemies[i].cx(), this.enemies[i].cy(),
+                                this.star_size, this.star_size, sword_hit, this.player, 90)
+                            let rand = random(.5, .8)
+                            burst.vx = vel_vect.vx * rand
+                            burst.vy = vel_vect.vy * rand
+                            this.player.shots.push(burst)
+                        }
+                    }
                 } else {
                     ///// CHECK IF PLAYER SHOTS HIT ENEMY /////
                     for (let j = 0; j < this.player.shots.length; j++) {
@@ -502,7 +517,7 @@ class World {
                 if (sword_hit) {
                     let shot = new StarShot(
                         this.enemies[i].shots[j].x, this.enemies[i].shots[j].y,
-                        this.star_size, this.star_size, this.player.color, this.player, 180)
+                        this.star_size, this.star_size, sword_hit, this.player, 180)
                     shot.vx = -this.enemies[i].shots[j].vx * 1
                     shot.vy = -this.enemies[i].shots[j].vy * 1
                     this.player.shots.push(shot)
@@ -580,11 +595,11 @@ class World {
             this.player.x = this.health_star.x - (this.player.width - this.star_size) / 2
             this.player.y = this.health_star.y - this.player.height
             ///// PICK UP HEALTH STAR  /////
-            if (key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s')) {
+            if (key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s') || key_tracker.isKeyDown(' ')) {
                 this.player.staa_ridin = false
                 this.player_on_platform = false
                 this.player.star_cooldown = 10
-                this.player.health += 1
+                if (this.player.health < 10) this.player.health += 1
                 this.health_star.x = random(0, this.width - this.star_size)
                 this.health_star.y = random(0, this.height - this.star_size - this.ground_height)
                 this.health_star.setRandomVelocities()
@@ -693,8 +708,12 @@ class World {
             ///// CHECK CENTER OF SMALL RECTANGLES /////
             let x = Math.round(r.cx() + this.trans_x)
             let y = Math.round(r.cy())
-            if (this.sword_ctx_data[(4 * this.sword_cnv.width * (y - 1)) + (4 * x) - 1] > 0) {
-                return true
+            let pix = (4 * this.sword_cnv.width * (y - 1)) + (4 * x) - 1
+            if (this.sword_ctx_data[pix] > 0) {
+                let r = this.sword_ctx_data[pix - 3]
+                let g = this.sword_ctx_data[pix - 2]
+                let b = this.sword_ctx_data[pix - 1]
+                return this.getCTXColor(r, g, b)
             }
         } else {
             ///// CHECK EACH CORNER OF LARGER RECTANGLES /////
@@ -705,17 +724,46 @@ class World {
             let bottom_left =   (4 * this.sword_cnv.width * (y + r.height - 1)) + (4 * x) - 1
             let bottom_right =  (4 * this.sword_cnv.width * (y + r.height - 1)) + (4 * (x + r.width)) - 1
             if (this.sword_ctx_data[top_left] > 0) {
-                return true
+                let r = this.sword_ctx_data[top_left - 3]
+                let g = this.sword_ctx_data[top_left - 2]
+                let b = this.sword_ctx_data[top_left - 1]
+                return this.getCTXColor(r, g, b)
             } else if (this.sword_ctx_data[top_right] > 0) {
-                return true
+                let r = this.sword_ctx_data[top_right - 3]
+                let g = this.sword_ctx_data[top_right - 2]
+                let b = this.sword_ctx_data[top_right - 1]
+                return this.getCTXColor(r, g, b)
             } else if (this.sword_ctx_data[bottom_left] > 0) {
-                return true
+                let r = this.sword_ctx_data[bottom_left - 3]
+                let g = this.sword_ctx_data[bottom_left - 2]
+                let b = this.sword_ctx_data[bottom_left - 1]
+                return this.getCTXColor(r, g, b)
             } else if (this.sword_ctx_data[bottom_right] > 0) {
-                return true
+                let r = this.sword_ctx_data[bottom_right - 3]
+                let g = this.sword_ctx_data[bottom_right - 2]
+                let b = this.sword_ctx_data[bottom_right - 1]
+                return this.getCTXColor(r, g, b)
             }
             return false
         }
         return false
+    }
+    getCTXColor(r, g, b) {
+        if (r === g === b) {
+            return 'white'
+        } else if (r > 0 && g + b === 0) {
+            return 'red'
+        } else if (b > 0 && r + g === 0) {
+            return 'mediumblue'
+        } else if (r === g) {
+            return 'yellow'
+        } else if (b === 0) {
+            return 'orange'
+        } else if (r === b) {
+            return 'limegreen'
+        } else {
+            return 'darkorchid'
+        }
     }
     draw() {
         this.world_ctx.clearRect(0, 0, this.world_cnv.width, this.world_cnv.height)
@@ -730,8 +778,9 @@ class World {
         this.world_ctx.fillText('Stars: ', this.world_cnv.width - 104, 48)
         this.world_ctx.fillText(display_stars, this.world_cnv.width - 32, 48)
         let display_score = this.player.score < 10 ? "0" + this.player.score : this.player.score
-        this.world_ctx.fillText('Score: ', this.world_cnv.width - 111, 72)
-        this.world_ctx.fillText(display_score, this.world_cnv.width - 32, 72)
+        let add_left = this.player.score > 99 ? -14 : 0
+        this.world_ctx.fillText('Score: ', this.world_cnv.width - 111 + add_left, 72)
+        this.world_ctx.fillText(display_score, this.world_cnv.width - 32 + add_left, 72)
 
         let status_bar_left = this.world_cnv.width * 0.25
         let status_bar_width = this.world_cnv.width * 0.5
@@ -754,7 +803,7 @@ class World {
         this.world_ctx.rect(7, 7, display_base_health, 18)  //WHOLE RECT
         this.world_ctx.stroke()
         ///// HEALTH TEXT /////
-        let add_left = this.player.health < 8 ? 8 : 0
+        add_left = this.player.health < 8 ? 8 : 0
         this.world_ctx.fillStyle = "black"
         this.world_ctx.fillText('Health', 12, 21)
         this.world_ctx.fillText(Math.round(this.player.health), 82 + add_left, 21)

@@ -293,7 +293,7 @@ class BlueEnemy extends Enemy {
         this.fire_range_x = 400
         this.runaway_cooldown = 0
         this.runaway_dir = 1
-        this.range_adj = Math.floor(Math.random() * 60)
+        this.range_adj = Math.floor(random(100, 200))
     }
     update() {
         this.runaway_cooldown -= 1
@@ -305,7 +305,7 @@ class BlueEnemy extends Enemy {
             }
             if (this.runaway_cooldown > 0) {
                 this.x += this.vx * this.runaway_dir
-            } else if (this.keepDistanceX(200 + this.range_adj, 300 + this.range_adj)) {
+            } else if (this.keepDistanceX(this.range_adj, 100 + this.range_adj)) {
                 this.y += this.vy
             } else {
                 this.y += this.vy * 2

@@ -96,8 +96,8 @@ class StarJumper extends Rectangle {
                     }
                 }
                 this.sword_trail[this.sword_trail.length - 1].push({
-                    cx: cx,               tx: this.sword_tip.x,
-                    cy: cy + adj_cy,      ty: this.sword_tip.y,      life: 100
+                    cx: cx,            tx: this.sword_tip.x,   rgb: new RGBColor(this.color),
+                    cy: cy + adj_cy,   ty: this.sword_tip.y,   color: this.color,    life: 100
                 })
                 world_ctx.strokeStyle = this.color
                 world_ctx.beginPath()
@@ -110,7 +110,6 @@ class StarJumper extends Rectangle {
             if (this.sword_trail[0].length === 0 && this.sword_trail.length>1) {
                 this.sword_trail.splice(0, 1)
             }
-            // sword_ctx.fillStyle = this.color
             for (let k=0; k<this.sword_trail.length; k++) {
                 let poly_path = {tip: [], cen: []}
                 for (let i = 0; i < this.sword_trail[k].length; i++) {
@@ -123,10 +122,11 @@ class StarJumper extends Rectangle {
                     poly_path.cen.push({x: this.sword_trail[k][i].cx, y: this.sword_trail[k][i].cy})
                 }
                 if (poly_path.tip.length > 0) {
-                    sword_ctx.strokeStyle = this.color
+                    sword_ctx.strokeStyle = this.sword_trail[k][0].color
                     let alpha = this.sword_trail[k][this.sword_trail[k].length-1].life / 180 + 0.2
-                    sword_ctx.fillStyle = "rgba(" + this.rgb["r"] + "," + this.rgb["g"] + "," + this.rgb["b"] +
-                        "," + alpha + ")"
+                    sword_ctx.fillStyle = "rgba(" + this.sword_trail[k][0].rgb["r"] + ","
+                                                  + this.sword_trail[k][0].rgb["g"] + ","
+                                                  + this.sword_trail[k][0].rgb["b"] + "," + alpha + ")"
                     sword_ctx.beginPath()
                     sword_ctx.moveTo(poly_path.tip[0].x, poly_path.tip[0].y)
                     for (let i = 1; i < poly_path.tip.length; i++) {
