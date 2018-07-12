@@ -182,37 +182,37 @@ class StarJumper extends Rectangle {
     getFlipAttack(x_click, y_click, ground_boost) {
         let dx = x_click - this.cx()
         let dy = y_click - this.cy()
-        if (dx > 0 && dy > 0 && this.energy >= 25) {
+        if (dx > 0 && dy > 0 && this.energy >= 35) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'clockwise'
             this.flip_type = 'down'
             this.facing = 1 // right
             this.vy = -4-ground_boost
-            this.energy -= 25
+            this.energy -= 35
             return true
-        } else if (dx > 0 & dy < 0 && this.energy >= 25) {
+        } else if (dx > 0 & dy < 0 && this.energy >= 35) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'counter'
             this.flip_type = 'up'
             this.facing = 1 // right
             this.vy = -0.6
-            this.energy -= 25
+            this.energy -= 35
             return true
-        } else if (dx < 0 & dy > 0 && this.energy >= 25) {
+        } else if (dx < 0 & dy > 0 && this.energy >= 35) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'counter'
             this.flip_type = 'down'
             this.facing = -1 // left
             this.vy = -4-ground_boost
-            this.energy -= 25
+            this.energy -= 35
             return true
-        } else if (this.energy >= 25) {
+        } else if (this.energy >= 35) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'clockwise'
             this.flip_type = 'up'
             this.facing = -1 // left
             this.vy = -0.6
-            this.energy -= 25
+            this.energy -= 35
             return true
         }
     }

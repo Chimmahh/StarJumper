@@ -1,4 +1,4 @@
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -239,11 +239,20 @@
             other_border.style.marginLeft = '0%'
         }
     </script>
-    <script type="text/javascript" src="color_parser.js"></script>
-    <script type="text/javascript" src="other.js"></script>
-    <script type="text/javascript" src="star_jumper.js"></script>
-    <script type="text/javascript" src="enemy.js"></script>
-    <script type="text/javascript" src="world.js"></script>
+
+    {% load static %}
+    <script src="{% static 'js/color_parser.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/other.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/star_jumper.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/enemy.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/world.js' %}"  type="text/javascript"></script>
+    <script src="{% static "js/reconnecting-websocket.min.js" %}" type="text/javascript"></script>
+
+{#    <script type="text/javascript" src="../static/js/color_parser.js"></script>#}
+{#    <script type="text/javascript" src="../static/js/other.js"></script>#}
+{#    <script type="text/javascript" src="../static/js/star_jumper.js"></script>#}
+{#    <script type="text/javascript" src="../static/js/enemy.js"></script>#}
+{#    <script type="text/javascript" src="../static/js/world.js"></script>#}
 
     <script>
         let color_data = {
@@ -312,7 +321,7 @@
             key_tracker.keyUp(evt.key);
         })
 
-        let world, fpsInterval, startTime, now, then, elapsed
+        let fpsInterval, startTime, now, then, elapsed, socket, world
         let restart = 0
 
         function animation_loop() {
@@ -323,19 +332,44 @@
                 then = now - (elapsed % fpsInterval)
                 world.update()
                 world.draw()
+                socket.send(JSON.stringify({
+                    "command": "send",
+                    "px": world.player.x,
+                    "py": world.player.y,
+                }))
             }
-            // if (!world.start) world.start = Date.now()
-            // world.current = Date.now()
         }
+
         function start_loop(fps, play_mode) {
             world = new World(world_cnv, sword_cnv, play_mode)
+            if (play_mode === 'rumble') {
+                let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws"
+                let ws_path = ws_scheme + '://' + window.location.host + "/game/stream/"
+                socket = new ReconnectingWebSocket(ws_path)
+                socket.onopen = function () {
+                    console.log("Connected to game socket")
+                    socket.send(JSON.stringify({
+                        "command": "join",
+                        "game": {{ game.id }}
+                    }))
+                }
+                socket.onmessage = function (message) {
+                    console.log('message received')
+                    let data = JSON.parse(message.data)
+                    if (data.leave) {
+                        delete world.pvp_data[data.username]
+                    } else {
+                        world.pvp_data[data.username] = data
+                    }
+                }
+            }
             fpsInterval = 1000 / fps
             then = Date.now()
             startTime = then
             animation_loop()
         }
 
-        start_loop(80, 'survival')
+        start_loop(80, 'rumble')
     </script>
 </body>
 </html>

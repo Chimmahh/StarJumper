@@ -274,7 +274,7 @@ class World {
         ///// IF YOU ARE FLIPPING, UP OR DOWN /////
         } else if (this.player.flip_count > 0) {
             if (this.player.flip_type === 'up') {
-                this.player.vy -= 0.08
+                this.player.vy -= 0.06
             } else {
                 this.player.vy += 0.5
             }
@@ -366,13 +366,7 @@ class World {
         }
         if (this.mode === 'survival') {
             this.updateSingleSurvival()
-        } else if (this.mode === 'rumble') {
-            this.updateMultiRumble()
         }
-    }
-
-    updateMultiRumble() {
-        let x = 1
     }
 
     updateSingleSurvival() {
@@ -405,10 +399,10 @@ class World {
                     update_result = this.enemies[i].update(this.ground.y, this.star_size)
                     if (this.enemies[i].x > this.width - this.enemies[i].width) {
                         this.enemies[i].x = this.width - this.enemies[i].width
-                        if (this.enemies[i].stun_ct < 0 && this.enemies[i].freeze_ct < 0) this.enemies[i].vx = -8
+                        if (this.enemies[i].stun_ct < 0) this.enemies[i].vx = -8
                     } else if (this.enemies[i].x < 0) {
                         this.enemies[i].x = 0
-                        if (this.enemies[i].stun_ct < 0 && this.enemies[i].freeze_ct < 0) this.enemies[i].vx = 8
+                        if (this.enemies[i].stun_ct < 0) this.enemies[i].vx = 8
                     }
                     ///// CHECK COLLISION WITH GREEN SHADOW /////
                     if (this.player.hurt_count < 0 && this.player.health > 0) {
@@ -509,7 +503,7 @@ class World {
                         }
                     }
                     ///// IF ENEMY AND PLAYER COLLIDE /////
-                    if (this.player.hurt_count < 0 && this.player.health > 0) {
+                    if (this.player.hurt_count < 0 && this.player.health > 0 && this.enemies[i].stun_ct < 0) {
                         if (this.enemies[i].checkCollideRec(this.player)) {
                             this.enemies[i].dead = true
                             if (this.player.shield > 0) {
@@ -534,7 +528,7 @@ class World {
                 this.enemies[i].stun_ct -= 1
                 this.enemies[i].freeze_ct -= 1
                 if (update_result || Math.random() < 0.02) {
-                    if (this.enemies[i].stun_ct < 0 && this.enemies[i].freeze_ct < 0) {
+                    if (this.enemies[i].stun_ct < 0) {
                         let take_shot = true
                         if (this.enemies[i].color === 'white') {
                             take_shot = this.enemies[i].proxyX() < this.enemies[i].fire_range_x
@@ -865,32 +859,17 @@ class World {
         this.world_ctx.stroke()
 
         ///// MINI-MAP HEALTH STAR HEART ///// -- ADAPTED FROM: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes
-        let dy = 9
+        let dy = 8
         this.world_ctx.beginPath()
-        this.world_ctx.moveTo(7.3 +hp, 2 +dy)
-        this.world_ctx.bezierCurveTo(7.33 +hp , 1.6  +dy , 6.77 +hp , 0    +dy , 4    +hp , 0    +dy )
-        this.world_ctx.bezierCurveTo(0    +hp , 0    +dy , 0    +hp , 5    +dy , 0    +hp , 5    +dy )
-        this.world_ctx.bezierCurveTo(0    +hp , 7.33 +dy , 2.67 +hp , 10.27+dy , 7.33 +hp , 12.67+dy )
-        this.world_ctx.bezierCurveTo(12   +hp , 10.27+dy , 14.67+hp , 7.33 +dy , 14.67+hp , 5    +dy )
-        this.world_ctx.bezierCurveTo(14.67+hp , 5    +dy , 14.67+hp , 0    +dy , 10.67+hp , 0    +dy )
-        this.world_ctx.bezierCurveTo(8.67 +hp , 0    +dy , 7.33 +hp , 1.6  +dy , 7.33 +hp , 2    +dy )
+        this.world_ctx.moveTo(9.2 +hp, 2.5 +dy)
+        this.world_ctx.bezierCurveTo(9.2  +hp , 2    +dy , 8.3  +hp , 0    +dy , 5    +hp , 0    +dy )
+        this.world_ctx.bezierCurveTo(0    +hp , 0    +dy , 0    +hp , 6.3  +dy , 0    +hp , 6.3  +dy )
+        this.world_ctx.bezierCurveTo(0    +hp , 9.2  +dy , 3.3  +hp , 12.8 +dy , 9.2  +hp , 15.8 +dy )
+        this.world_ctx.bezierCurveTo(15   +hp , 12.8 +dy , 18.3 +hp , 9.2  +dy , 18.3 +hp , 6.3  +dy )
+        this.world_ctx.bezierCurveTo(18.3 +hp , 6.3  +dy , 18.3 +hp , 0    +dy , 13.3 +hp , 0    +dy )
+        this.world_ctx.bezierCurveTo(10.8 +hp , 0    +dy , 9.2  +hp , 2    +dy , 9.2  +hp , 2.5  +dy )
         this.world_ctx.fillStyle = this.health_star.color
         this.world_ctx.fill()
-
-        ///// MINI-MAP ENEMIES /////
-        let enemy_position_in_world, ep
-        for (let i=0; i<this.enemies.length; i++) {
-            if (!this.enemies[i].dead) {
-                enemy_position_in_world = this.enemies[i].cx() / this.width
-                ep = status_bar_width * enemy_position_in_world + status_bar_left
-                this.world_ctx.beginPath()
-                this.world_ctx.moveTo(ep - 8, 22)
-                this.world_ctx.lineTo(ep + 8, 22)
-                this.world_ctx.lineTo(ep, 8)
-                this.world_ctx.fillStyle = this.enemies[i].o_color
-                this.world_ctx.fill()
-            }
-        }
 
         ///// MINI-MAP PLAYER ///// -- ADAPTED FROM: http://jsfiddle.net/m1erickson/8j6kdf4o/
         let rot = Math.PI / 2 * 3
@@ -934,29 +913,53 @@ class World {
         for (let i=1; i<this.platforms.length; i++) {
             this.platforms[i].draw(this.world_ctx)
         }
-        for (let i=0; i<this.enemies.length; i++) {
-            if (!this.enemies[i].dead) {
-                if (this.enemies[i].freeze_ct > 0) {
-                    this.enemies[i].draw(this.world_ctx)
-                } else if (this.enemies[i].stun_ct > 0) {
-                    this.enemies[i].color = this.enemies[i].o_color
-                    if (this.enemies[i].stun_ct % 2 === 0) this.enemies[i].draw(this.world_ctx)
-                } else {
-                    this.enemies[i].draw(this.world_ctx)
+        if (this.mode === 'survival') {
+            for (let i = 0; i < this.enemies.length; i++) {
+                if (!this.enemies[i].dead) {
+                    if (this.enemies[i].freeze_ct > 0) {
+                        this.enemies[i].draw(this.world_ctx)
+                    } else if (this.enemies[i].stun_ct > 0) {
+                        this.enemies[i].color = this.enemies[i].o_color
+                        if (this.enemies[i].stun_ct % 2 === 0) this.enemies[i].draw(this.world_ctx)
+                    } else {
+                        this.enemies[i].draw(this.world_ctx)
+                    }
+                }
+                if (this.enemies[i].shadows) {
+                    for (let j = 0; j < this.enemies[i].shadows.length; j++) {
+                        this.enemies[i].shadows[j].draw(this.world_ctx)
+                        this.enemies[i].shadows[j].life -= 1
+                        if (this.enemies[i].shadows[j].life === 0) this.enemies[i].shadows.splice(j, 1)
+                    }
+                }
+                for (let j = 0; j < this.enemies[i].shots.length; j++) {
+                    this.enemies[i].shots[j].draw(this.world_ctx)
+                    this.checkExtraDraw(this.enemies[i].shots[j])
                 }
             }
-            if (this.enemies[i].shadows) {
-                for (let j=0; j<this.enemies[i].shadows.length; j++) {
-                    this.enemies[i].shadows[j].draw(this.world_ctx)
-                    this.enemies[i].shadows[j].life -= 1
-                    if (this.enemies[i].shadows[j].life === 0) this.enemies[i].shadows.splice(j, 1)
+            ///// MINI-MAP ENEMIES /////
+            let enemy_position_in_world, ep
+            for (let i = 0; i < this.enemies.length; i++) {
+                if (!this.enemies[i].dead) {
+                    enemy_position_in_world = this.enemies[i].cx() / this.width
+                    ep = status_bar_width * enemy_position_in_world + status_bar_left
+                    this.world_ctx.beginPath()
+                    this.world_ctx.moveTo(ep - 5, 20)
+                    this.world_ctx.lineTo(ep + 5, 20)
+                    this.world_ctx.lineTo(ep, 10)
+                    this.world_ctx.fillStyle = this.enemies[i].o_color
+                    this.world_ctx.fill()
                 }
             }
-            for (let j=0; j<this.enemies[i].shots.length; j++) {
-                this.enemies[i].shots[j].draw(this.world_ctx)
-                this.checkExtraDraw(this.enemies[i].shots[j])
+        } else {
+            for (let player in this.pvp_data) {
+                if (this.pvp_data.hasOwnProperty(player)) {
+                    this.world_ctx.fillStyle = 'yellow'
+                    this.world_ctx.fillRect(player.px, player.py, this.player.height, this.player.width)
+                }
             }
         }
+
         for (let i=0; i<this.player.shots.length; i++) {
             this.player.shots[i].draw(this.world_ctx)
             this.checkExtraDraw(this.player.shots[i])

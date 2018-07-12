@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Star Jumper lounge</title>
+</head>
+<body>
+    <ul>
+        {% for game in games %}
+            <li><a href="{% url 'app:play' game.id %}">{{ game.name }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
