@@ -343,20 +343,26 @@
                 }
                 socket.onmessage = function (message) {
                     let data = JSON.parse(message.data)
+                    let guy = world.pvp_data[data.username]
                     if (data.type === 'join') {
-                        world.pvp_data[data.username].x = sword_cnv.width/2 - 10
-                        world.pvp_data[data.username].y = sword_cnv.height-world.ground_height - 20
-                        world.pvp_data[data.username].key_tracker = new KeyTracker()
+                        guy.x = sword_cnv.width/2 - 10
+                        guy.y = sword_cnv.height-world.ground_height - 20
+                        guy.key_tracker = new KeyTracker()
+                        guy.color = 'red'
                     } else if (data.type === 'keydown') {
-                        world.pvp_data[data.username].keys.push(data.key)
+                        guy.keys.push(data.key)
                     } else if (data.type === 'keyup') {
-                        world.pvp_data[data.username].keys = world.pvp_data[data.username].keys.filter(function(e) {
+                        guy.keys = world.pvp_data[data.username].keys.filter(function(e) {
                             return e !== data.key;
                         })
                     } else if (data.type === 'shots') {
-                        world.pvp_data[data.username].shots.push(data.shot)
+                        guy.shots.push(data.shot)
                     } else if (data.type === 'swords') {
-                        world.pvp_data[data.username].sword_trail.push(data.sword_trail)
+                        guy.sword_trail.push(data.sword_trail)
+                    } else if (data.type === 'portal') {
+                        guy.color = data.color
+                        guy.x = data.x
+                        guy.y = data.y
                     }
                 }
             }

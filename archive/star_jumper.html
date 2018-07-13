@@ -328,7 +328,7 @@
             // world.current = Date.now()
         }
         function start_loop(fps, play_mode) {
-            world = new World(world_cnv, sword_cnv, play_mode)
+            world = new World(world_cnv, sword_cnv, play_mode, key_tracker)
             fpsInterval = 1000 / fps
             then = Date.now()
             startTime = then

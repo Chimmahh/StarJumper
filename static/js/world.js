@@ -380,10 +380,11 @@ class World {
 
     updateRumble() {
         for (let enemy in this.pvp_data) {
-            if (this.player.key_tracker.isKeyDown('ArrowLeft')
-                || this.player.key_tracker.isKeyDown('a')
-                || this.player.key_tracker.isKeyDown(('A'))) {
-
+            let guy = this.pvp_data[enemy]
+            if (guy.key_tracker.isKeyDown('ArrowLeft')
+                || guy.key_tracker.isKeyDown('a')
+                || guy.key_tracker.isKeyDown(('A'))) {
+                    guy.x += color_data[guy.color].mx
             }
         }
     }
