@@ -8,6 +8,7 @@ class StarJumper extends Rectangle {
         this.mx = color_data[color].mx
         this.star_count = 50
         this.star_cooldown = 0
+        this.on_platform = true
         this.staa_ridin = false
         this.hurt_count = 0
         this.last_teleport = {}

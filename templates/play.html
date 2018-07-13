@@ -294,19 +294,9 @@
                             shield:              3.0  },
         }
 
-        let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
-        let key_tracker = new KeyTracker()
-
-        document.addEventListener('keydown', (evt) => {
-            key_tracker.keyDown(evt.key)
-        })
-
-        document.addEventListener('keyup', (evt) => {
-            key_tracker.keyUp(evt.key);
-        })
-
-        let fpsInterval, startTime, now, then, elapsed, socket, world, then_sec, elapsed_sec
+        let fpsInterval, startTime, now, then, elapsed, socket, world, then_reconcile, elapsed_reconcile, key_tracker
         let restart = 0
+        let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
 
         function animation_loop() {
             if (world.play) window.requestAnimationFrame(animation_loop)
@@ -317,19 +307,44 @@
                 world.update()
                 world.draw()
             }
-            elapsed_sec = now - then_sec
-            if (elapsed_sec > 1000) {
-                then_sec = now - (elapsed % 1000)
+            elapsed_reconcile = now - then_reconcile
+            if (elapsed_reconcile > 500) {
+                then_reconcile = now - (elapsed_reconcile % fpsInterval)
                 socket.send(JSON.stringify({
-                    "command": "send",
-                    "px": world.player.x,
-                    "py": world.player.y,
+                    "command": "reconcile",
+                    "game": {{ game.id }},
+                    "x": world.player.x,
+                    "y": world.player.y,
+                    "vy": world.player.vy,
+                    "color": world.player.color,
                 }))
             }
         }
 
         function start_loop(fps, play_mode) {
-            world = new World(world_cnv, sword_cnv, play_mode)
+            key_tracker = new KeyTracker()
+            document.addEventListener('keydown', (evt) => {
+                if (!key_tracker.isKeyDown(evt.key)) {
+                    key_tracker.keyDown(evt.key)
+                    if (!(evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W' && !world.player.on_platform)) {
+                        socket.send(JSON.stringify({
+                            "command": "keydown",
+                            "game": {{ game.id }},
+                            "key": evt.key,
+                        }))
+                    }
+                }
+            })
+            document.addEventListener('keyup', (evt) => {
+                key_tracker.keyUp(evt.key);
+                socket.send(JSON.stringify({
+                    "command": "keyup",
+                    "game": {{ game.id }},
+                    "key": evt.key,
+                }))
+            })
+
+            world = new World(world_cnv, sword_cnv, play_mode, key_tracker)
             if (play_mode === 'rumble') {
                 let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws"
                 let ws_path = ws_scheme + '://' + window.location.host + "/game/stream/"
@@ -343,21 +358,23 @@
                 }
                 socket.onmessage = function (message) {
                     let data = JSON.parse(message.data)
+                    if (!world.pvp_data.hasOwnProperty(data.username)) {
+                        world.pvp_data[data.username] = {}
+                        world.pvp_data[data.username].key_tracker = new KeyTracker()
+                    }
                     let guy = world.pvp_data[data.username]
-                    if (data.type === 'join') {
-                        guy.x = sword_cnv.width/2 - 10
-                        guy.y = sword_cnv.height-world.ground_height - 20
-                        guy.key_tracker = new KeyTracker()
-                        guy.color = 'red'
+                    if (data.type === 'reconcile') {
+                        guy.x = data.x
+                        guy.y = data.y
+                        guy.vy = data.vy
+                        guy.color = data.color
                     } else if (data.type === 'keydown') {
-                        guy.keys.push(data.key)
+                        guy.key_tracker.keyDown(data.key)
                     } else if (data.type === 'keyup') {
-                        guy.keys = world.pvp_data[data.username].keys.filter(function(e) {
-                            return e !== data.key;
-                        })
-                    } else if (data.type === 'shots') {
+                        guy.key_tracker.keyUp(data.key)
+                    } else if (data.type === 'shot') {
                         guy.shots.push(data.shot)
-                    } else if (data.type === 'swords') {
+                    } else if (data.type === 'sword') {
                         guy.sword_trail.push(data.sword_trail)
                     } else if (data.type === 'portal') {
                         guy.color = data.color
@@ -366,9 +383,10 @@
                     }
                 }
             }
+
             fpsInterval = 1000 / fps
             then = Date.now()
-            then_sec = Date.now()
+            then_reconcile = Date.now()
             startTime = then
             animation_loop()
         }

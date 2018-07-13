@@ -1,6 +1,7 @@
 
 class World {
     constructor(world_cnv, sword_cnv, play_mode, key_tracker) {
+        this.key_tracker = key_tracker
         this.play = true
         this.mode = play_mode
         this.difficulty = 5         // 1 - 5
@@ -13,7 +14,6 @@ class World {
         this.width = sword_cnv.width * 2
         this.height = sword_cnv.height
         this.star_size = 3
-        this.player_on_platform = true
         this.ground_height = 20
         this.dv = 0.03
         this.total_velocity = 0
@@ -188,13 +188,16 @@ class World {
         }
         this.total_velocity = total_velocity
         ///// JUMP IF ON PLATFORM ////////
-        if ((this.player.key_tracker.isKeyDown('ArrowUp') || this.player.key_tracker.isKeyDown('w')) && this.player_on_platform) {
+        if (this.player.key_tracker.isKeyDown('ArrowUp')
+            || this.player.key_tracker.isKeyDown('W')
+            || this.player.key_tracker.isKeyDown('w')
+            && this.player.on_platform) {
             this.player.vy = -7
             this.player.y -= 7
             this.player.staa_ridin = false
         }
         ///// DEFAULT ASSUMPTIONS, RESET, INCREMENT, ETC //////
-        this.player_on_platform = false
+        this.player.on_platform = false
         this.player.star_cooldown -= 1
         this.player.display_shield_ct -= 1
         this.player.hurt_count -= 1
@@ -258,7 +261,7 @@ class World {
         ///// IF RIDING ON HEALTH STAR /////
         this.health_star.update()
         if (this.player.staa_ridin) {
-            this.player_on_platform = true
+            this.player.on_platform = true
             this.player.x = this.health_star.x - (this.player.width - this.star_size) / 2
             this.player.y = this.health_star.y - this.player.height
             ///// PICK UP HEALTH STAR  /////
@@ -266,7 +269,7 @@ class World {
                 || this.player.key_tracker.isKeyDown('s')
                 || this.player.key_tracker.isKeyDown(' ')) {
                     this.player.staa_ridin = false
-                    this.player_on_platform = false
+                    this.player.on_platform = false
                     this.player.star_cooldown = 10
                     if (this.player.health < 10) this.player.health += 1
                     this.health_star.x = random(0, this.width - this.star_size)
@@ -275,7 +278,7 @@ class World {
             }
         ///// IF YOU LAND ON THE HEALTH STAR /////
         } else if (this.player.landed(this.health_star) && !this.player.staa_ridin) {
-            this.player_on_platform = true
+            this.player.on_platform = true
             this.player.staa_ridin = true
             this.player.flip_count = 0
         ///// IF YOU ARE FLIPPING, UP OR DOWN /////
@@ -299,7 +302,7 @@ class World {
                 if (this.player.landed(this.platforms[i])) {
                     this.player.y = this.platforms[i].top() - this.player.height
                     this.player.vy = 0
-                    this.player_on_platform = true
+                    this.player.on_platform = true
                     ///// DOWN KEY = PICK UP STAR /////
                     if ((this.player.key_tracker.isKeyDown('ArrowDown') || this.player.key_tracker.isKeyDown('s'))
                         && this.platforms[i] !== this.ground && this.player.star_cooldown < 0) {
@@ -352,7 +355,7 @@ class World {
             }
         }
         ///// MID AIR SCENARIOS - NOT ON A PLATFORM OR HEALTH STAR, NOT FLIPPING /////
-        if (!this.player_on_platform && !this.player.staa_ridin && this.player.flip_count <= 0) {
+        if (!this.player.on_platform && !this.player.staa_ridin && this.player.flip_count <= 0) {
             this.player.vy += 0.25
             this.player.y += this.player.vy
             ///// CHECK GROUND BOUNCE /////
@@ -384,7 +387,26 @@ class World {
             if (guy.key_tracker.isKeyDown('ArrowLeft')
                 || guy.key_tracker.isKeyDown('a')
                 || guy.key_tracker.isKeyDown(('A'))) {
+                    guy.x -= color_data[guy.color].mx
+                    ///// TOO FAR RIGHT /////
+                    if (guy.x < 0) guy.x = 0
+            } else if (guy.key_tracker.isKeyDown('ArrowRight')
+                || guy.key_tracker.isKeyDown('d')
+                || guy.key_tracker.isKeyDown('D')) {
                     guy.x += color_data[guy.color].mx
+                    ///// TOO FAR RIGHT /////
+                    if (guy.x + this.player.width > world.width) {
+                        guy.x = world.width - this.player.width
+                    }
+            } else if ((guy.key_tracker.isKeyDown('ArrowUp')
+                || guy.key_tracker.isKeyDown('W'))
+                || guy.key_tracker.isKeyDown('w')) {
+                    guy.vy = -7
+                    guy.y -= 7
+            }
+            guy.y += guy.vy
+            if (guy.y + this.player.height > this.ground.y) {
+                guy.y = this.ground.y - this.player.height
             }
         }
     }
@@ -972,8 +994,11 @@ class World {
                 }
             }
         } else {
-            this.world_ctx.fillStyle = 'yellow'
-            this.world_ctx.fillRect(this.pvp_data.px, this.pvp_data.py, this.player.width, this.player.height)
+            for (let enemy in this.pvp_data) {
+                let guy = this.pvp_data[enemy]
+                this.world_ctx.fillStyle = guy.color
+                this.world_ctx.fillRect(guy.x, guy.y, this.player.width, this.player.height)
+            }
         }
 
         for (let i=0; i<this.player.shots.length; i++) {
