@@ -1,7 +1,8 @@
 
 class StarJumper extends Rectangle {
-    constructor(x, y, width, height, color) {
+    constructor(x, y, width, height, color, key_tracker) {
         super(x, y, width, height, color);
+        this.key_tracker = key_tracker
         this.vy = 0
         this.vx = 0
         this.mx = color_data[color].mx

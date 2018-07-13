@@ -11,7 +11,7 @@ class Player(AsyncJsonWebsocketConsumer):
             await self.close()
         else:
             await self.accept()
-        # self.game = set()
+        self.game = set()
 
     async def receive_json(self, content):
         command = content.get("command", None)
@@ -28,17 +28,18 @@ class Player(AsyncJsonWebsocketConsumer):
 
     async def join_game(self, game_id):
         game = await get_game_or_error(game_id, self.scope["user"])
-        # self.game.add(game_id)
+        self.game.add(game_id)
         await self.channel_layer.group_add(
             game.group_name,
             self.channel_name,
         )
-        # await self.send_json(
-        #     {
-        #         "join": str(game.id),
-        #         "name": game.name,
-        #     }
-        # )
+        await self.send_json(
+            {
+                "join": str(game.id),
+                "name": game.name,
+                'username': self.scope["user"].username,
+            }
+        )
 
     async def leave_game(self, game_id):
         game = await get_game_or_error(game_id, self.scope["user"])
@@ -58,18 +59,23 @@ class Player(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_send(
             game.group_name,
             {
+                "type": "receive.data",
                 "game_id": str(1),
+                "username": self.scope["user"].username,
                 "px": str(px),
                 "py": str(py),
             }
         )
 
     async def receive_data(self, event):
-        await self.send_json(
-            {
-                "game": event["game_id"],
-                "username": event["username"],
-                "data": event["data"],
-            }
-        )
+        # print(event)
+        if event["username"] != self.scope["user"].username:
+            await self.send_json(
+                {
+                    "game": event["game_id"],
+                    "username": event["username"],
+                    "px": event["px"],
+                    "py": event["py"],
+                }
+            )
 

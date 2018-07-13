@@ -1,6 +1,6 @@
 
 class World {
-    constructor(world_cnv, sword_cnv, play_mode) {
+    constructor(world_cnv, sword_cnv, play_mode, key_tracker) {
         this.play = true
         this.mode = play_mode
         this.difficulty = 5         // 1 - 5
@@ -21,6 +21,7 @@ class World {
         this.colors = ['red', 'orange', 'yellow', 'limegreen', 'mediumblue', 'darkorchid', 'white']
         this.portals = []
         this.enemies = []
+        this.pvp_data = []
         this.trans_x = 0
 
         ////// PLATFORMS ///////
@@ -35,7 +36,7 @@ class World {
         }
         ////// STAR JUMPER!!! ///////
         this.player = new StarJumper(sword_cnv.width/2 - 10, sword_cnv.height-this.ground_height - 20,
-            20, 40, this.colors[color_index])
+            20, 40, this.colors[color_index], key_tracker)
 
         ////// HEALTH STAR ///////
         this.health_star = new HealthStar(random(100, this.width - 100), random(0, this.height * 0.8),
@@ -187,7 +188,7 @@ class World {
         }
         this.total_velocity = total_velocity
         ///// JUMP IF ON PLATFORM ////////
-        if ((key_tracker.isKeyDown('ArrowUp') || key_tracker.isKeyDown('w')) && this.player_on_platform) {
+        if ((this.player.key_tracker.isKeyDown('ArrowUp') || this.player.key_tracker.isKeyDown('w')) && this.player_on_platform) {
             this.player.vy = -7
             this.player.y -= 7
             this.player.staa_ridin = false
@@ -201,36 +202,40 @@ class World {
         if (this.player.energy < this.player.base_energy) this.player.energy += 0.25
         ///// GO RIGHT OR LEFT /////
         if (!this.player.staa_ridin) {
-            if (key_tracker.isKeyDown('ArrowLeft') || key_tracker.isKeyDown('a') || key_tracker.isKeyDown(('A'))) {
-                if (this.player.flip_count <= 0) {
-                    this.player.facing = -1 // left
-                    ///// CHECK LEFT BUMP /////
-                    for (let i = 0; i < this.platforms.length; i++) {
-                        if (this.player.rubLeft(this.platforms[i])) {
-                            rubbing = true
-                            break
+            if (this.player.key_tracker.isKeyDown('ArrowLeft')
+                || this.player.key_tracker.isKeyDown('a')
+                || this.player.key_tracker.isKeyDown(('A'))) {
+                    if (this.player.flip_count <= 0) {
+                        this.player.facing = -1 // left
+                        ///// CHECK LEFT BUMP /////
+                        for (let i = 0; i < this.platforms.length; i++) {
+                            if (this.player.rubLeft(this.platforms[i])) {
+                                rubbing = true
+                                break
+                            }
                         }
                     }
-                }
-                if (!rubbing) this.player.x -= this.player.mx
-                ///// TOO FAR LEFT /////
-                if (this.player.x < 0) this.player.x = 0
-            } else if (key_tracker.isKeyDown('ArrowRight') || key_tracker.isKeyDown('d') || key_tracker.isKeyDown('D')) {
-                if (this.player.flip_count <= 0) {
-                    this.player.facing = 1 // right
-                    ///// CHECK RIGHT BUMP /////
-                    for (let i = 0; i < this.platforms.length; i++) {
-                        if (this.player.rubRight(this.platforms[i])) {
-                            rubbing = true
-                            break
+                    if (!rubbing) this.player.x -= this.player.mx
+                    ///// TOO FAR LEFT /////
+                    if (this.player.x < 0) this.player.x = 0
+            } else if (this.player.key_tracker.isKeyDown('ArrowRight')
+                || this.player.key_tracker.isKeyDown('d')
+                || this.player.key_tracker.isKeyDown('D')) {
+                    if (this.player.flip_count <= 0) {
+                        this.player.facing = 1 // right
+                        ///// CHECK RIGHT BUMP /////
+                        for (let i = 0; i < this.platforms.length; i++) {
+                            if (this.player.rubRight(this.platforms[i])) {
+                                rubbing = true
+                                break
+                            }
                         }
                     }
-                }
-                if (!rubbing) this.player.x += this.player.mx
-                ///// TOO FAR RIGHT /////
-                if (this.player.x + this.player.width > world.width) {
-                    this.player.x = world.width - this.player.width
-                }
+                    if (!rubbing) this.player.x += this.player.mx
+                    ///// TOO FAR RIGHT /////
+                    if (this.player.x + this.player.width > world.width) {
+                        this.player.x = world.width - this.player.width
+                    }
             }
         }
         ///// CHECK IF NORMAL STARS ARE INSIDE SWORD TRAIL /////
@@ -257,14 +262,16 @@ class World {
             this.player.x = this.health_star.x - (this.player.width - this.star_size) / 2
             this.player.y = this.health_star.y - this.player.height
             ///// PICK UP HEALTH STAR  /////
-            if (key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s') || key_tracker.isKeyDown(' ')) {
-                this.player.staa_ridin = false
-                this.player_on_platform = false
-                this.player.star_cooldown = 10
-                if (this.player.health < 10) this.player.health += 1
-                this.health_star.x = random(0, this.width - this.star_size)
-                this.health_star.y = random(0, this.height - this.star_size - this.ground_height)
-                this.health_star.setRandomVelocities()
+            if (this.player.key_tracker.isKeyDown('ArrowDown')
+                || this.player.key_tracker.isKeyDown('s')
+                || this.player.key_tracker.isKeyDown(' ')) {
+                    this.player.staa_ridin = false
+                    this.player_on_platform = false
+                    this.player.star_cooldown = 10
+                    if (this.player.health < 10) this.player.health += 1
+                    this.health_star.x = random(0, this.width - this.star_size)
+                    this.health_star.y = random(0, this.height - this.star_size - this.ground_height)
+                    this.health_star.setRandomVelocities()
             }
         ///// IF YOU LAND ON THE HEALTH STAR /////
         } else if (this.player.landed(this.health_star) && !this.player.staa_ridin) {
@@ -294,7 +301,7 @@ class World {
                     this.player.vy = 0
                     this.player_on_platform = true
                     ///// DOWN KEY = PICK UP STAR /////
-                    if ((key_tracker.isKeyDown('ArrowDown') || key_tracker.isKeyDown('s'))
+                    if ((this.player.key_tracker.isKeyDown('ArrowDown') || this.player.key_tracker.isKeyDown('s'))
                         && this.platforms[i] !== this.ground && this.player.star_cooldown < 0) {
                             this.player.star_cooldown = 10
                             this.player.grabStar()
@@ -353,7 +360,7 @@ class World {
                 this.player.y = this.height - this.player.height - this.ground.height
             }
             ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
-            if ((key_tracker.isKeyDown(' ') || key_tracker.isKeyDown('s'))
+            if ((this.player.key_tracker.isKeyDown(' ') || this.player.key_tracker.isKeyDown('s'))
                 && this.player.star_count > 0 && this.player.star_cooldown < 0) {
                     let new_star_x = this.player.x + (this.player.width - this.star_size) / 2
                     let new_star_y = this.player.y + this.player.height
@@ -365,11 +372,23 @@ class World {
             }
         }
         if (this.mode === 'survival') {
-            this.updateSingleSurvival()
+            this.updateSurvival()
+        } else if (this.mode === 'rumble') {
+            this.updateRumble()
         }
     }
 
-    updateSingleSurvival() {
+    updateRumble() {
+        for (let enemy in this.pvp_data) {
+            if (this.player.key_tracker.isKeyDown('ArrowLeft')
+                || this.player.key_tracker.isKeyDown('a')
+                || this.player.key_tracker.isKeyDown(('A'))) {
+
+            }
+        }
+    }
+
+    updateSurvival() {
         ///// ENEMIES /////
         let enemy_add = Math.min(this.player.score / (7 - this.difficulty), this.difficulty * 5)
         if (this.enemies.length < 5 + enemy_add) this.addEnemy(this.colors[Math.floor(Math.random() * this.colors.length)])
@@ -952,12 +971,8 @@ class World {
                 }
             }
         } else {
-            for (let player in this.pvp_data) {
-                if (this.pvp_data.hasOwnProperty(player)) {
-                    this.world_ctx.fillStyle = 'yellow'
-                    this.world_ctx.fillRect(player.px, player.py, this.player.height, this.player.width)
-                }
-            }
+            this.world_ctx.fillStyle = 'yellow'
+            this.world_ctx.fillRect(this.pvp_data.px, this.pvp_data.py, this.player.width, this.player.height)
         }
 
         for (let i=0; i<this.player.shots.length; i++) {

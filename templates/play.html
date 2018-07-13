@@ -127,7 +127,7 @@
 </head>
 
 <body>
-
+    {{ user.username }}
     <canvas id="world_cnv" width="1200" height="500"></canvas>
     <canvas id="sword_cnv" width="1200" height="500"></canvas>
     <!--<canvas id="player_shots_cnv" width="1200" height="500"></canvas>-->
@@ -299,29 +299,13 @@
 
         document.addEventListener('keydown', (evt) => {
             key_tracker.keyDown(evt.key)
-            if (evt.key === 'b') {                                                       /////  CHEAT - CYCLE COLOR
-                world.player.color = world.colors[color_index % world.colors.length]
-                world.player.shot_speed = color_data[world.player.color].shot_speed
-                world.player.shield = color_data[world.player.color].shield
-                world.player.shot_cost = color_data[world.player.color].shot_cost
-                world.player.mx = color_data[world.player.color].mx
-                world.player.rgb = new RGBColor(world.player.color)
-                color_index += 1
-            }
-            if (evt.key === 'g') {                                                       /////  CHEAT - GOD MODE
-                world.player.mx = 4
-                world.player.energy = 100
-                world.player.star_count = 50
-                world.player.health = 10
-                world.player.shield = color_data[world.player.color].shield
-            }
         })
 
         document.addEventListener('keyup', (evt) => {
             key_tracker.keyUp(evt.key);
         })
 
-        let fpsInterval, startTime, now, then, elapsed, socket, world
+        let fpsInterval, startTime, now, then, elapsed, socket, world, then_sec, elapsed_sec
         let restart = 0
 
         function animation_loop() {
@@ -332,6 +316,10 @@
                 then = now - (elapsed % fpsInterval)
                 world.update()
                 world.draw()
+            }
+            elapsed_sec = now - then_sec
+            if (elapsed_sec > 1000) {
+                then_sec = now - (elapsed % 1000)
                 socket.send(JSON.stringify({
                     "command": "send",
                     "px": world.player.x,
@@ -354,22 +342,31 @@
                     }))
                 }
                 socket.onmessage = function (message) {
-                    console.log('message received')
                     let data = JSON.parse(message.data)
-                    if (data.leave) {
-                        delete world.pvp_data[data.username]
-                    } else {
-                        world.pvp_data[data.username] = data
+                    if (data.type === 'join') {
+                        world.pvp_data[data.username].x = sword_cnv.width/2 - 10
+                        world.pvp_data[data.username].y = sword_cnv.height-world.ground_height - 20
+                        world.pvp_data[data.username].key_tracker = new KeyTracker()
+                    } else if (data.type === 'keydown') {
+                        world.pvp_data[data.username].keys.push(data.key)
+                    } else if (data.type === 'keyup') {
+                        world.pvp_data[data.username].keys = world.pvp_data[data.username].keys.filter(function(e) {
+                            return e !== data.key;
+                        })
+                    } else if (data.type === 'shots') {
+                        world.pvp_data[data.username].shots.push(data.shot)
+                    } else if (data.type === 'swords') {
+                        world.pvp_data[data.username].sword_trail.push(data.sword_trail)
                     }
                 }
             }
             fpsInterval = 1000 / fps
             then = Date.now()
+            then_sec = Date.now()
             startTime = then
             animation_loop()
         }
-
-        start_loop(80, 'rumble')
+        start_loop(30, 'rumble')
     </script>
 </body>
 </html>
