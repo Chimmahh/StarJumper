@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from .utils import get_game_or_error
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -40,3 +41,6 @@ def home(request):
 def play(request, game_id):
     game = get_object_or_404(Game, pk=game_id)
     return render(request, "play.html", {"game": game})
+
+# def portal_update(request, game_id):
+

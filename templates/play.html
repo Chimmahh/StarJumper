@@ -294,20 +294,22 @@
                             shield:              3.0  },
         }
 
-        let fpsInterval, startTime, now, then, elapsed, socket, world, then_reconcile, elapsed_reconcile, key_tracker
+        let fpsInterval, startTime, now, socket, world, key_tracker
+        let then, elapsed, then_reconcile, elapsed_reconcile
         let restart = 0
         let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
+        let host_ct = 0
 
         function animation_loop() {
             if (world.play) window.requestAnimationFrame(animation_loop)
             now = Date.now()
+            elapsed_reconcile = now - then_reconcile
             elapsed = now - then
             if (elapsed > fpsInterval) {
                 then = now - (elapsed % fpsInterval)
                 world.update()
                 world.draw()
             }
-            elapsed_reconcile = now - then_reconcile
             if (elapsed_reconcile > 500) {
                 then_reconcile = now - (elapsed_reconcile % fpsInterval)
                 socket.send(JSON.stringify({
@@ -318,6 +320,19 @@
                     "vy": world.player.vy,
                     "color": world.player.color,
                 }))
+                host_ct += 1
+            }
+            if (world.player.host) {
+                if (host_ct === 4 && elapsed_reconcile > 250) {   // STAGGER HOST RECONCILE SOCKET SEND
+                    socket.send(JSON.stringify({
+                        "command": "reconcile_host",
+                        "game": {{ game.id }},
+                        "portals": world.portalXYVs(),
+                        "stars": world.starXYs(),
+                        "health": world.dictXYV(),
+                    }))
+                    host_ct = 0
+                }
             }
         }
 
@@ -327,6 +342,7 @@
                 if (!key_tracker.isKeyDown(evt.key)) {
                     key_tracker.keyDown(evt.key)
                     if (!(evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W' && !world.player.on_platform)) {
+                    //if (evt.key !== 'ArrowUp' && evt.key !== 'w' && evt.key !== 'W' || world.player.on_platform) {
                         socket.send(JSON.stringify({
                             "command": "keydown",
                             "game": {{ game.id }},
@@ -347,7 +363,7 @@
             world = new World(world_cnv, sword_cnv, play_mode, key_tracker)
             if (play_mode === 'rumble') {
                 let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws"
-                let ws_path = ws_scheme + '://' + window.location.host + "/game/stream/"
+                let ws_path = ws_scheme + '://' + window.location.host + "/game/ether/"
                 socket = new ReconnectingWebSocket(ws_path)
                 socket.onopen = function () {
                     console.log("Connected to game socket")
@@ -358,16 +374,23 @@
                 }
                 socket.onmessage = function (message) {
                     let data = JSON.parse(message.data)
-                    if (!world.pvp_data.hasOwnProperty(data.username)) {
-                        world.pvp_data[data.username] = {}
-                        world.pvp_data[data.username].key_tracker = new KeyTracker()
+                    let guy
+                    if (data.username) {
+                        if (!world.pvp_data.hasOwnProperty(data.username)) {
+                            world.pvp_data[data.username] = {}
+                            world.pvp_data[data.username].key_tracker = new KeyTracker()
+                        }
+                        guy = world.pvp_data[data.username]
                     }
-                    let guy = world.pvp_data[data.username]
-                    if (data.type === 'reconcile') {
+                    if (data.type === 'host') {
+                        world.player.host = true
+                    } else if (data.type === 'reconcile') {
                         guy.x = data.x
                         guy.y = data.y
                         guy.vy = data.vy
                         guy.color = data.color
+                    } else if (data.type === 'reconcile_host') {
+                        world.host_update = data.host_update
                     } else if (data.type === 'keydown') {
                         guy.key_tracker.keyDown(data.key)
                     } else if (data.type === 'keyup') {

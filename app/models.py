@@ -25,7 +25,7 @@ class Game(models.Model):
 class GamePlayer(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     player = models.ForeignKey(User, on_delete=models.CASCADE)
-    score = models.IntegerField()
+    score = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return str(self.game) + " - " + str(self.player)

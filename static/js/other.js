@@ -92,6 +92,12 @@ class Rectangle {
     cy() {
         return this.y + this.height / 2
     }
+    dictXY() {
+        return {"x": this.x, "y": this.y}
+    }
+    dictXYV() {
+        return {"x": this.x, "y": this.y, "vx": this.vx, "vy": this.vy}
+    }
     checkCollideRec(rec) {
         let dx = (this.x + this.width/2) - (rec.x + rec.width/2)
         let dy = (this.y + this.height/2) - (rec.y + rec.height/2)
@@ -287,6 +293,9 @@ class Portal {
     }
     setBottom(y) {
         this.y = y - this.rad
+    }
+    dictXYV() {
+        return {"x": this.x, "y": this.y, "vx": this.vx, "vy": this.vy}
     }
 }
 

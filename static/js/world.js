@@ -28,34 +28,10 @@ class World {
         this.platforms = []
         this.ground = new Rectangle(0, this.height - this.ground_height, this.width, this.ground_height, 'green')
         this.platforms.push(this.ground)
-        for (let i=0; i<50; i++) {
-            let x = random(10, this.width-10)
-            let y = random(10, this.height-this.ground_height-100)
-            let star = new Rectangle(x, y, this.star_size, this.star_size, 'white')
-            this.platforms.push(star)
-        }
+
         ////// STAR JUMPER!!! ///////
         this.player = new StarJumper(sword_cnv.width/2 - 10, sword_cnv.height-this.ground_height - 20,
             20, 40, this.colors[color_index], key_tracker)
-
-        ////// HEALTH STAR ///////
-        this.health_star = new HealthStar(random(100, this.width - 100), random(0, this.height * 0.8),
-            this.star_size, this.star_size, 'deeppink')
-
-        ////// PORTALS ONE PAIR PER COLOR ///////
-        for (let i=0; i<this.colors.length; i++) {
-            let radius = 10 + Math.random() * 10;           // PORTALS
-            let x = random(radius, this.width - radius)
-            let y = random(radius, this.height * 0.8)
-            let p1 = new Portal(x, y, radius, this.colors[i], Math.random()- 0.5, Math.random()- 0.5)
-            x = random(radius, this.width - radius)
-            y = random(radius, this.height * 0.8)
-            let p2 = new Portal(x, y, radius, this.colors[i], Math.random()- 0.5, Math.random()- 0.5)
-            p1.portal_pair = p2
-            p2.portal_pair = p1
-            this.portals.push(p1)
-            this.portals.push(p2)
-        }
 
         ///// LEFT CLICK - SHOOT STAR ///////
         document.body.onclick = (e) => {
@@ -104,8 +80,63 @@ class World {
         }
     }
 
+    world_extra_initiate(portals=false, stars=false, health=false) {
+        ///// STARS /////
+        let x, y
+        if (stars) {
+            for (let i=0; i<stars.length; i++) {
+                let star = new Rectangle(stars[i].x, stars[i].y, this.star_size, this.star_size, 'white')
+                this.platforms.push(star)
+            }
+        } else {
+            for (let i=0; i<50; i++) {
+                x = random(10, this.width-10)
+                y = random(10, this.height-this.ground_height-100)
+                let star = new Rectangle(x, y, this.star_size, this.star_size, 'white')
+                this.platforms.push(star)
+            }
+            ////// PORTALS ///////
+            for (let i=0; i<this.colors.length; i++) {
+                let radius = 10 + Math.random() * 10;           // PORTALS
+                x = portals[i*2].x || random(radius, this.width - radius)
+                y = portals[i*2].y || random(radius, this.height * 0.8)
+                let p1 = new Portal(x, y, radius, this.colors[i], Math.random() - 0.5, Math.random() - 0.5)
+                x = portals[i*2 + 1].x || random(radius, this.width - radius)
+                y = portals[i*2 + 1].y || random(radius, this.height * 0.8)
+                let p2 = new Portal(x, y, radius, this.colors[i], Math.random() - 0.5, Math.random() - 0.5)
+                p1.portal_pair = p2
+                p2.portal_pair = p1
+                this.portals.push(p1)
+                this.portals.push(p2)
+            }
+
+        }
+        ////// HEALTH STAR ///////
+        x = health.x || random(100, this.width - 100)
+        y = health.y || random(0, this.height * 0.8)
+        console.log('heeeeeello')
+        this.health_star = new HealthStar(x, y, this.star_size, this.star_size, 'deeppink')
+    }
+
     update() {
         if (this.player.health === 0) this.play = false
+        if (this.player.host) {
+            if (this.portals.length === 0) this.world_extra_initiate()
+        } else if (this.host_update) {
+            if (this.portals.length === 0) {
+                this.world_extra_initiate(this.host_update.portals, this.host_update.stars, this.host_update.health)
+            } else {
+                for (let i=0; i<this.host_update.portals.length; i++) {
+                    this.portals[i].x = this.host_update.portals[i].x
+                    this.portals[i].y = this.host_update.portals[i].y
+                    this.portals[i].vx = this.host_update.portals[i].vx
+                    this.portals[i].vy = this.host_update.portals[i].vy
+                }
+                this.health_star.x = this.host_update.health.x
+                this.health_star.y = this.host_update.health.y
+            }
+            this.host_update = false
+        }
         restart += 1
         this.trans_x = this.getTransX()
         let pix_data = this.sword_ctx.getImageData(0, 0, this.sword_cnv.width, this.height)
@@ -193,7 +224,7 @@ class World {
             || this.player.key_tracker.isKeyDown('w')
             && this.player.on_platform) {
             this.player.vy = -7
-            this.player.y -= 7
+            // this.player.y -= 7
             this.player.staa_ridin = false
         }
         ///// DEFAULT ASSUMPTIONS, RESET, INCREMENT, ETC //////
@@ -398,12 +429,18 @@ class World {
                     if (guy.x + this.player.width > world.width) {
                         guy.x = world.width - this.player.width
                     }
-            } else if ((guy.key_tracker.isKeyDown('ArrowUp')
-                || guy.key_tracker.isKeyDown('W'))
+            } else if (guy.key_tracker.isKeyDown('ArrowUp')
+                || guy.key_tracker.isKeyDown('W')
                 || guy.key_tracker.isKeyDown('w')) {
                     guy.vy = -7
                     guy.y -= 7
+                    guy.on_platform = false
+            } else if (this.player.key_tracker.isKeyDown('ArrowDown')
+                || guy.key_tracker.isKeyDown('s')
+                || guy.key_tracker.isKeyDown(' ')) {
+                    guy.on_platform = false
             }
+            if (!guy.on_platform) guy.vy += .2
             guy.y += guy.vy
             if (guy.y + this.player.height > this.ground.y) {
                 guy.y = this.ground.y - this.player.height
@@ -721,6 +758,22 @@ class World {
             }
             if (this.enemies[i].dead && this.enemies[i].shots.length === 0) this.enemies.splice(i, 1)
         }
+    }
+
+    starXYs() {
+        let stars = []
+        for (let i=1; i<this.platforms.length; i++) {
+            stars.push(this.platforms[i].dictXY())
+        }
+        return stars
+    }
+
+    portalXYVs() {
+        let portals = []
+        for (let i=1; i<this.portals.length; i++) {
+            portals.push(this.portals[i].dictXYV())
+        }
+        return portals
     }
 
     addEnemy(color) {

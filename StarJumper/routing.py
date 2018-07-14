@@ -7,7 +7,7 @@ from app.consumers import Player
 application = ProtocolTypeRouter({
     "websocket": AuthMiddlewareStack(
         URLRouter([
-            path("game/stream/", Player),
+            path("game/ether/", Player),
         ]),
     ),
 })

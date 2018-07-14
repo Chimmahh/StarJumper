@@ -1,7 +1,8 @@
 
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer, JsonWebsocketConsumer
 from .utils import get_game_or_error
 from .exceptions import ClientError
+from .models import GamePlayer
 import json
 
 class Player(AsyncJsonWebsocketConsumer):
@@ -25,12 +26,14 @@ class Player(AsyncJsonWebsocketConsumer):
             await self.keydown_group(content)
         elif command == "reconcile":
             await self.reconcile_group(content)
+        elif command == "reconcile_host":
+            await self.reconcile_host_group(content)
         elif command == "shot":
             await self.shot_group(content)
 
 
     async def disconnect(self, code):
-        for game_id in list(self.game):
+        for game_id in self.game:
             await self.leave_game(game_id)
 
     async def join_game(self, content):
@@ -40,6 +43,17 @@ class Player(AsyncJsonWebsocketConsumer):
             game.group_name,
             self.channel_name,
         )
+        new_game_player = GamePlayer(game=game, player=self.scope["user"])
+        new_game_player.save()
+        players_in_game = GamePlayer.objects.all().count()
+        print(players_in_game)
+        print('!!!!!!!!!!!!!!!!!!!!!!!!')
+        if players_in_game == 1:
+            await self.send_json(
+                {
+                    "type": "host",
+                }
+            )
 
     async def leave_game(self, content):
         game = await get_game_or_error(content["game"], self.scope["user"])
@@ -50,7 +64,7 @@ class Player(AsyncJsonWebsocketConsumer):
         )
         await self.send_json(
             {
-                "leave": str(game.id)
+                "type": "leave"
             }
         )
 
@@ -60,7 +74,7 @@ class Player(AsyncJsonWebsocketConsumer):
             game.group_name,
             {
                 "type": "keyup.client",
-                "game_id": str(content["game"]),
+                # "game_id": str(content["game"]),
                 "username": self.scope["user"].username,
                 "key": content["key"],
             }
@@ -71,7 +85,7 @@ class Player(AsyncJsonWebsocketConsumer):
             await self.send_json(
                 {
                     "type": "keyup",
-                    "game": event["game_id"],
+                    # "game": event["game_id"],
                     "username": event["username"],
                     "key": event["key"],
                 }
@@ -83,7 +97,7 @@ class Player(AsyncJsonWebsocketConsumer):
             game.group_name,
             {
                 "type": "keydown.client",
-                "game_id": str(content["game"]),
+                # "game_id": str(content["game"]),
                 "username": self.scope["user"].username,
                 "key": content["key"],
             }
@@ -94,7 +108,7 @@ class Player(AsyncJsonWebsocketConsumer):
             await self.send_json(
                 {
                     "type": "keydown",
-                    "game": event["game_id"],
+                    # "game": event["game_id"],
                     "username": event["username"],
                     "key": event["key"],
                 }
@@ -106,7 +120,7 @@ class Player(AsyncJsonWebsocketConsumer):
             game.group_name,
             {
                 "type": "reconcile.client",
-                "game_id": str(content["game"]),
+                # "game_id": str(content["game"]),
                 "username": self.scope["user"].username,
                 "x": content["x"],
                 "y": content["y"],
@@ -120,12 +134,40 @@ class Player(AsyncJsonWebsocketConsumer):
             await self.send_json(
                 {
                     "type": "reconcile",
-                    "game": event["game_id"],
+                    # "game": event["game_id"],
                     "username": event["username"],
                     "x": event["x"],
                     "y": event["y"],
                     "vy": event["vy"],
                     "color": event["color"]
+                }
+            )
+
+    async def reconcile_host_group(self, content):
+        game = await get_game_or_error(content["game"], self.scope["user"])
+        await self.channel_layer.group_send(
+            game.group_name,
+            {
+                "type": "reconcile_host.client",
+                # "game_id": str(content["game"]),
+                "username": self.scope["user"].username,
+                "portals": content["portals"],
+                "stars": content["stars"],
+                "health": content["health"],
+            }
+        )
+
+    async def reconcile_host_client(self, event):
+        if event["username"] != self.scope["user"].username:
+            await self.send_json(
+                {
+                    "type": "reconcile_host",
+                    # "game": event["game_id"],
+                    "host_update": {
+                        "portals": event["portals"],
+                        "stars": event["stars"],
+                        "health": event["health"],
+                    }
                 }
             )
 

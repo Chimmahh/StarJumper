@@ -2,6 +2,7 @@
 class StarJumper extends Rectangle {
     constructor(x, y, width, height, color, key_tracker) {
         super(x, y, width, height, color);
+        this.host = false
         this.key_tracker = key_tracker
         this.vy = 0
         this.vx = 0
@@ -28,6 +29,7 @@ class StarJumper extends Rectangle {
         this.flip_type = ''
         this.facing = 1 // right
     }
+
     draw(world_ctx, sword_ctx, ground_y) {
         let draw_me = true
         if (this.hurt_count > 60 && this.hurt_count % 3 !== 0) {
