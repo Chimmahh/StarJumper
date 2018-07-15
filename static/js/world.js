@@ -1,10 +1,11 @@
 
+
 class World {
     constructor(world_cnv, sword_cnv, play_mode, key_tracker) {
         this.key_tracker = key_tracker
         this.play = true
         this.mode = play_mode
-        this.difficulty = 5         // 1 - 5
+        this.difficulty = 5
         this.world_cnv = world_cnv
         this.sword_cnv = sword_cnv
         this.world_ctx = world_cnv.getContext('2d')
@@ -23,14 +24,10 @@ class World {
         this.enemies = []
         this.pvp_data = []
         this.trans_x = 0
-
-        ////// PLATFORMS ///////
         this.platforms = []
         this.ground = new Rectangle(0, this.height - this.ground_height, this.width, this.ground_height, 'green')
         this.platforms.push(this.ground)
-
-        ////// STAR JUMPER!!! ///////
-        this.player = new StarJumper(sword_cnv.width/2 - 10, sword_cnv.height-this.ground_height - 20,
+        this.player = new StarJumper(sword_cnv.width/2 - 20, sword_cnv.height-this.ground_height - 40,
             'red', key_tracker)
 
         ///// LEFT CLICK - SHOOT STAR ///////
@@ -63,17 +60,16 @@ class World {
                 this.player.shots.push(shot)
             }
         }
-
         ///// RIGHT CLICK - SWORD SWIPE ///////
         document.body.oncontextmenu = (e) => {
             if (this.player.flip_count <= 0 && !this.player.staa_ridin) {
-                let ground_boost = Math.max(6 - (this.ground.y - this.player.y) / this.player.height * 2, 0)
+                let ground_boost = Math.max(6 - (this.ground.y_pos - this.player.y_pos) / this.player.height * 2, 0)
                 let result = this.player.getFlipAttack(
                     e.clientX - this.cnv_rect.left - this.trans_x, e.clientY - this.cnv_rect.top, ground_boost)
                 if (result) {
                     this.player.sword_trail.push([])
-                    this.player.sword_tip.x = this.player.cx()
-                    this.player.sword_tip.y = this.player.cy()
+                    this.player.sword_tip.x_pos = this.player.cx()
+                    this.player.sword_tip.y_pos = this.player.cy()
                 }
             }
             return false
@@ -84,14 +80,14 @@ class World {
         ///// STARS /////
         if (stars) {
             for (let i=0; i<stars.length; i++) {
-                let star = new Rectangle(stars[i].x, stars[i].y, this.star_size, this.star_size, 'white')
+                let star = new Rectangle(stars[i].x_pos, stars[i].y_pos, this.star_size, this.star_size, 'white')
                 this.platforms.push(star)
             }
             ////// PORTALS ///////
             for (let i=0; i<this.colors.length; i++) {
-                let p1 = new Portal(portals[i].x, portals[i].y, 5, this.colors[i],
+                let p1 = new Portal(portals[i].x_pos, portals[i].y_pos, 5, this.colors[i],
                     portals[i].vx, portals[i].vy)
-                let p2 = new Portal(portals[i+1].x, portals[i+1].y, 5, this.colors[i],
+                let p2 = new Portal(portals[i+1].x_pos, portals[i+1].y_pos, 5, this.colors[i],
                     portals[i+1].vx, portals[i+1].vy)
                 p1.portal_pair = p2
                 p2.portal_pair = p1
@@ -99,7 +95,7 @@ class World {
                 this.portals.push(p2)
             }
             ////// HEALTH STAR ///////
-            this.health_star = new HealthStar(health.x, health.y, this.star_size, this.star_size, 'deeppink')
+            this.health_star = new HealthStar(health.x_pos, health.y_pos, this.star_size, this.star_size, 'deeppink')
             this.health_star.vx = health.vx
             this.health_star.vy = health.vy
         } else {
@@ -136,18 +132,17 @@ class World {
         if (this.player.host) {
             if (this.portals.length === 0) this.world_extra_initiate()
         } else if (this.host_update) {
-            // console.log(this.host_update)
             if (this.portals.length === 0) {
                 this.world_extra_initiate(this.host_update.portals, this.host_update.stars, this.host_update.health)
             } else {
                 for (let i=0; i<this.host_update.portals.length; i++) {
-                    this.portals[i].x = this.host_update.portals[i].x
-                    this.portals[i].y = this.host_update.portals[i].y
+                    this.portals[i].x_pos = this.host_update.portals[i].x
+                    this.portals[i].y_pos = this.host_update.portals[i].y
                     this.portals[i].vx = this.host_update.portals[i].vx
                     this.portals[i].vy = this.host_update.portals[i].vy
                 }
-                this.health_star.x = this.host_update.health.x
-                this.health_star.y = this.host_update.health.y
+                this.health_star.x_pos = this.host_update.health.x
+                this.health_star.y_pos = this.host_update.health.y
                 this.health_star.vx = this.host_update.health.vx
                 this.health_star.vy = this.host_update.health.vy
             }
@@ -161,25 +156,25 @@ class World {
         for (let i = 0; i < this.portals.length; i++) {
             total_velocity += Math.abs(this.portals[i].vx) + Math.abs(this.portals[i].vy)
             ///// MOVE PORTAL, SIZE ACCORDING TO PORTAL PAIR /////
-            let portal_pair_position = Math.abs(this.portals[i].portal_pair.x - this.health_star.x) / this.width
+            let portal_pair_position = Math.abs(this.portals[i].portal_pair.x_pos - this.health_star.x_pos) / this.width
             this.portals[i].update(portal_pair_position)
             ///// BOUNCE PORTALS OFF SIDES & GROUND //////
-            if (this.portals[i].x + this.portals[i].rad > this.width) {
+            if (this.portals[i].x_pos + this.portals[i].rad > this.width) {
                 this.portals[i].setRight(this.width)
                 this.portals[i].vx *= -1
-                this.portals[i].x += this.portals[i].vx
-            } else if (this.portals[i].x - this.portals[i].rad < 0) {
+                this.portals[i].x_pos += this.portals[i].vx
+            } else if (this.portals[i].x_pos - this.portals[i].rad < 0) {
                 this.portals[i].setLeft(0)
                 this.portals[i].vx *= -1
-                this.portals[i].x += this.portals[i].vx
-            } else if (this.portals[i].y + this.portals[i].rad > this.height - this.ground_height) {
+                this.portals[i].x_pos += this.portals[i].vx
+            } else if (this.portals[i].y_pos + this.portals[i].rad > this.height - this.ground_height) {
                 this.portals[i].setBottom(this.height - this.ground_height)
                 this.portals[i].vy *= -1
-                this.portals[i].y += this.portals[i].vy
-            } else if (this.portals[i].y - this.portals[i].rad < 0) {
+                this.portals[i].y_pos += this.portals[i].vy
+            } else if (this.portals[i].y_pos - this.portals[i].rad < 0) {
                 this.portals[i].setTop(0)
                 this.portals[i].vy *= -1
-                this.portals[i].y += this.portals[i].vy
+                this.portals[i].y_pos += this.portals[i].vy
             }
             ///// CHECK TO SEE IF PORTAL HIT ANOTHER PORTAL //////
             for (let j = i+1; j < this.portals.length; ++j) {
@@ -194,30 +189,13 @@ class World {
                     this.portals[j].vx > 0 ? this.portals[j].vx += dv: this.portals[j].vx -= dv
                 }
             }
-            ///// SEE IF PORTAL HITS PLAYER, EXCEPT LAST PORTAL EXITED //////
-            if (this.portals[i] !== this.player.last_teleport) {
-                let hit_player = this.portals[i].checkCollideRec(this.player)
-                if (hit_player) {
-                    if (this.player.flip_count > 0) this.player.sword_trail.push([])
-                    this.player.vy = 0
-                    let new_color = this.portals[i].color
-                    this.player.color = new_color
-                    this.player.shield = color_data[new_color].shield
-                    this.player.mx = color_data[new_color].mx
-                    this.player.rgb = new RGBColor(new_color)
-                    this.player.last_teleport = this.portals[i].portal_pair
-                    this.player.display_shield_ct = 60
-                    this.player.x = this.portals[i].portal_pair.x
-                    this.player.y = this.portals[i].portal_pair.y
-                }
-            }
             ///// SEE IF PORTAL HITS HEALTH STAR, EXCEPT LAST PORTAL EXITED //////
             if (this.portals[i] !== this.health_star.last_teleport) {
                 let hit_health_star = this.portals[i].checkCollideRec(this.health_star)
                 if (hit_health_star) {
                     this.health_star.last_teleport = this.portals[i].portal_pair
-                    this.health_star.x = this.portals[i].portal_pair.x
-                    this.health_star.y = this.portals[i].portal_pair.y
+                    this.health_star.x_pos = this.portals[i].portal_pair.x
+                    this.health_star.y_pos = this.portals[i].portal_pair.y
                     if (this.portals[i].portal_pair.vx > 0) {
                         this.health_star.vx = -Math.abs(this.health_star.vx)
                     } else {
@@ -234,254 +212,36 @@ class World {
             this.portals[i].vib_count -= 1
         }
         this.total_velocity = total_velocity
-        ///// JUMP IF ON PLATFORM ////////
-        if (this.player.key_tracker.isKeyDown('ArrowUp')
-            || this.player.key_tracker.isKeyDown('W')
-            || this.player.key_tracker.isKeyDown('w')
-            && this.player.on_platform) {
-            this.player.vy = -7
-            // this.player.y -= 7
-            this.player.staa_ridin = false
+        ///// BOUNCE POINT STAR //////
+        let is_ob_right = this.health_star.x_pos + this.health_star.width > this.width
+        let is_ob_left = this.health_star.x_pos < 0
+        if (is_ob_right || is_ob_left) this.health_star.vx *= -1
+        let is_ob_top = this.health_star.y_pos > this.height - this.ground.height - this.star_size
+        let is_ob_bottom = this.health_star.y_pos < 0
+        if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1
+        if (this.mode === 'survival') {
+            this.updateSurvival()
+        } else if (this.mode === 'rumble') {
+            this.updateRumble()
         }
-        ///// DEFAULT ASSUMPTIONS, RESET, INCREMENT, ETC //////
-        this.player.on_platform = false
-        this.player.star_cooldown -= 1
-        this.player.display_shield_ct -= 1
-        this.player.hurt_count -= 1
-        let rubbing = false
-        if (this.player.energy < this.player.base_energy) this.player.energy += 0.25
-        ///// GO RIGHT OR LEFT /////
-        if (!this.player.staa_ridin) {
-            if (this.player.key_tracker.isKeyDown('ArrowLeft')
-                || this.player.key_tracker.isKeyDown('a')
-                || this.player.key_tracker.isKeyDown(('A'))) {
-                    if (this.player.flip_count <= 0) {
-                        this.player.facing = -1 // left
-                        ///// CHECK LEFT BUMP /////
-                        for (let i = 0; i < this.platforms.length; i++) {
-                            if (this.player.rubLeft(this.platforms[i])) {
-                                rubbing = true
-                                break
-                            }
-                        }
-                    }
-                    if (!rubbing) this.player.x -= this.player.mx
-                    ///// TOO FAR LEFT /////
-                    if (this.player.x < 0) this.player.x = 0
-            } else if (this.player.key_tracker.isKeyDown('ArrowRight')
-                || this.player.key_tracker.isKeyDown('d')
-                || this.player.key_tracker.isKeyDown('D')) {
-                    if (this.player.flip_count <= 0) {
-                        this.player.facing = 1 // right
-                        ///// CHECK RIGHT BUMP /////
-                        for (let i = 0; i < this.platforms.length; i++) {
-                            if (this.player.rubRight(this.platforms[i])) {
-                                rubbing = true
-                                break
-                            }
-                        }
-                    }
-                    if (!rubbing) this.player.x += this.player.mx
-                    ///// TOO FAR RIGHT /////
-                    if (this.player.x + this.player.width > world.width) {
-                        this.player.x = world.width - this.player.width
-                    }
-            }
-        }
+        //// UPDATE STAR JUMPER /////
+        this.player.update(this.portals, this.platforms, this.enemies, this.width, this.height, this.health_star)
         ///// CHECK IF NORMAL STARS ARE INSIDE SWORD TRAIL /////
         for (let i=1; i<this.platforms.length; i++) {
-            if (this.platforms[i].x + this.trans_x < this.world_cnv.width && this.platforms[i].x + this.trans_x > 0) {
-                let sword_hit = checkCTX(this.platforms[i], this.sword_cnv.width, this.sword_ctx_data)
+            if (this.platforms[i].x_pos + this.trans_x < this.world_cnv.width && this.platforms[i].x_pos + this.trans_x > 0) {
+                let sword_hit = checkCTX(this.platforms[i], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
                 if (sword_hit) {
                     this.platforms.splice(i, 1)
                     this.player.star_count += 1
                 }
             }
         }
-        ///// BOUNCE POINT STAR //////
-        let is_ob_right = this.health_star.x + this.health_star.width > this.width
-        let is_ob_left = this.health_star.x < 0
-        if (is_ob_right || is_ob_left) this.health_star.vx *= -1
-        let is_ob_top = this.health_star.y > this.height - this.ground.height - this.star_size
-        let is_ob_bottom = this.health_star.y < 0
-        if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1
-        ///// IF RIDING ON HEALTH STAR /////
-        this.health_star.update()
-        if (this.player.staa_ridin) {
-            this.player.on_platform = true
-            this.player.x = this.health_star.x - (this.player.width - this.star_size) / 2
-            this.player.y = this.health_star.y - this.player.height
-            ///// PICK UP HEALTH STAR  /////
-            if (this.player.key_tracker.isKeyDown('ArrowDown')
-                || this.player.key_tracker.isKeyDown('s')
-                || this.player.key_tracker.isKeyDown(' ')) {
-                    this.player.staa_ridin = false
-                    this.player.on_platform = false
-                    this.player.star_cooldown = 10
-                    if (this.player.health < 10) this.player.health += 1
-                    this.health_star.x = random(0, this.width - this.star_size)
-                    this.health_star.y = random(0, this.height - this.star_size - this.ground_height)
-                    this.health_star.setRandomVelocities()
-            }
-        ///// IF YOU LAND ON THE HEALTH STAR /////
-        } else if (this.player.landed(this.health_star) && !this.player.staa_ridin) {
-            this.player.on_platform = true
-            this.player.staa_ridin = true
-            this.player.flip_count = 0
-        ///// IF YOU ARE FLIPPING, UP OR DOWN /////
-        } else if (this.player.flip_count > 0) {
-            if (this.player.flip_type === 'up') {
-                this.player.vy -= 0.06
-            } else {
-                this.player.vy += 0.5
-            }
-            this.player.y += this.player.vy
-            if (this.player.y + this.player.height + this.ground.height >= this.height) {
-                this.player.y = this.height - this.player.height - this.ground.height
-                this.player.flip_count = 0
-            } else {
-                this.player.flip_count -= 1
-            }
-        ///// OTHERWISE CHECK NORMAL HITS /////
-        } else {
-            for (let i=0; i<this.platforms.length; i++) {
-                ///// LANDED ON STAR OR GROUND /////
-                if (this.player.landed(this.platforms[i])) {
-                    this.player.y = this.platforms[i].top() - this.player.height
-                    this.player.vy = 0
-                    this.player.on_platform = true
-                    ///// DOWN KEY = PICK UP STAR /////
-                    if ((this.player.key_tracker.isKeyDown('ArrowDown') || this.player.key_tracker.isKeyDown('s'))
-                        && this.platforms[i] !== this.ground && this.player.star_cooldown < 0) {
-                            this.player.star_cooldown = 10
-                            this.player.grabStar()
-                            this.platforms.splice(i, 1)
-                    }
-                    break
-                ///// CHECK HEAD BUMP /////
-                } else if (this.player.hitHead(this.platforms[i]) && this.player.vy < 0
-                    && this.platforms[i] !== this.ground && this.player.flip_count <= 0) {
-                        this.player.y = this.platforms[i].bottom() + 0.001
-                        this.player.vy = -0.015
-                        break
-                }
-            }
-        }
-        ///// UPDATE STAR SHOTS /////
-        for (let i=0; i<this.player.shots.length; i++) {
-            ///// UPDATE & BOUNCE SHOTS IN PLAY /////
-            if (this.player.shots[i].ground_timer === 0) {
-                ///// REMOVE EXPIRED STAR SHOTS
-                if (this.player.shots[i].life === 0) {
-                    this.player.shots.splice(i, 1)
-                } else {
-                    this.player.shots[i].update()
-                    if (this.player.shots[i].life < 30) {
-                        this.player.shots[i].width += 4 / this.player.shots[i].life
-                        this.player.shots[i].height += 4 / this.player.shots[i].life
-                        this.player.shots[i].x -= 2 / this.player.shots[i].life
-                        this.player.shots[i].y -= 2 / this.player.shots[i].life
-                    }
-                    ///// SLOW SHOTS IN PLAY /////
-                    this.player.shots[i].life -= 1
-                    this.player.shots[i].vx *= 0.994
-                    this.player.shots[i].vy *= 0.994
-                    this.player.shots[i].speed *= 0.994
-                    if (this.player.shots[i]) this.checkPurpleShot(this.player, this.player.shots[i], i)
-                }
-            ///// REMOVE INFLATED SHOTS THAT HAVE REACHED 1 /////
-            } else if (this.player.shots[i].ground_timer === 1) {
-                this.player.shots.splice(i, 1)
-            ///// INFLATE STARS THAT HAVE HIT GROUND /////
-            } else {
-                this.player.shots[i].ground_timer -= 1
-                this.player.shots[i].height += 0.6
-                this.player.shots[i].width += 0.6
-                this.player.shots[i].y = this.height - this.ground_height - this.player.shots[i].height
-                this.player.shots[i].x -= 0.3
-            }
-        }
-        ///// MID AIR SCENARIOS - NOT ON A PLATFORM OR HEALTH STAR, NOT FLIPPING /////
-        if (!this.player.on_platform && !this.player.staa_ridin && this.player.flip_count <= 0) {
-            this.player.vy += 0.25
-            this.player.y += this.player.vy
-            ///// CHECK GROUND BOUNCE /////
-            if (this.player.y + this.player.height + this.ground.height >= this.height) {
-                this.player.y = this.height - this.player.height - this.ground.height
-            }
-            ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
-            if ((this.player.key_tracker.isKeyDown(' ') || this.player.key_tracker.isKeyDown('s'))
-                && this.player.star_count > 0 && this.player.star_cooldown < 0) {
-                    let new_star_x = this.player.x + (this.player.width - this.star_size) / 2
-                    let new_star_y = this.player.y + this.player.height
-                    let star = new Rectangle(new_star_x, new_star_y, this.star_size, this.star_size, 'white')
-                    this.platforms.push(star)
-                    this.player.vy = 0
-                    this.player.star_cooldown = 10
-                    this.player.star_count -= 1
-            }
-        }
-        if (this.mode === 'survival') {
-            this.updateSurvival()
-        } else if (this.mode === 'rumble') {
-            this.updateRumble()
-        }
+
     }
 
     updateRumble() {
         for (let enemy in this.pvp_data) {
-            let guy = this.pvp_data[enemy]
-            let rubbing = false
-            if (guy.key_tracker.isKeyDown('ArrowLeft')
-                || guy.key_tracker.isKeyDown('a')
-                || guy.key_tracker.isKeyDown(('A'))) {
-                    if (guy.flip_count <= 0) {
-                        guy.facing = -1 // left
-                        ///// CHECK LEFT BUMP /////
-                        for (let i=0; i<this.platforms.length; i++) {
-                            if (guy.rubLeft(this.platforms[i])) {
-                                rubbing = true
-                                break
-                            }
-                        }
-                    }
-                    if (!rubbing) this.player.x -= this.player.mx
-                    guy.x -= color_data[guy.color].mx
-                    if (guy.x < 0) guy.x = 0                            // TOO FAR LEFT
-            } else if (guy.key_tracker.isKeyDown('ArrowRight')
-                || guy.key_tracker.isKeyDown('d')
-                || guy.key_tracker.isKeyDown('D')) {
-                    if (this.player.flip_count <= 0) {
-                        this.player.facing = 1 // right
-                        ///// CHECK RIGHT BUMP /////
-                        for (let i = 0; i < this.platforms.length; i++) {
-                            if (this.player.rubRight(this.platforms[i])) {
-                                rubbing = true
-                                break
-                            }
-                        }
-                    }
-                    if (!rubbing) guy.x += guy.mx
-                    ///// TOO FAR RIGHT /////
-                    if (guy.x + this.player.width > world.width) {      // TOO FAR RIGHT
-                        guy.x = world.width - this.player.width
-                    }
-            } else if (guy.key_tracker.isKeyDown('ArrowUp')
-                || guy.key_tracker.isKeyDown('W')
-                || guy.key_tracker.isKeyDown('w')) {
-                    guy.vy = -7
-                    guy.y -= 7
-                    guy.on_platform = false
-            } else if (this.player.key_tracker.isKeyDown('ArrowDown')
-                || guy.key_tracker.isKeyDown('s')
-                || guy.key_tracker.isKeyDown(' ')) {
-                    guy.on_platform = false
-            }
-            if (!guy.on_platform) guy.vy += .2
-            guy.y += guy.vy
-            if (guy.y + this.player.height > this.ground.y) {
-                guy.y = this.ground.y - this.player.height
-            }
+            this.pvp_data[enemy].update(this.portals,this.platforms, this.width, this.height, this.health_star)
         }
     }
 
@@ -494,36 +254,37 @@ class World {
             if (!this.enemies[i].dead) {
                 ///// UPDATE BY ENEMY COLOR /////
                 if (this.enemies[i].o_color === 'red') {
-                    update_result = this.enemies[i].update(this.ground.y)
-                    if (this.enemies[i].x > this.width - this.enemies[i].width) {
-                        this.enemies[i].x = this.width - this.enemies[i].width
+                    update_result = this.enemies[i].update(this.ground.y_pos)
+                    if (this.enemies[i].x_pos > this.width - this.enemies[i].width) {
+                        this.enemies[i].x_pos = this.width - this.enemies[i].width
                         this.enemies[i].vx = 0
                         this.enemies[i].move_cooldown = 240
-                    } else if (this.enemies[i].x < 0) {
-                        this.enemies[i].x = 0
+                    } else if (this.enemies[i].x_pos < 0) {
+                        this.enemies[i].x_pos = 0
                         this.enemies[i].vx = 0
                         this.enemies[i].move_cooldown = 240
                     }
                 } else if (this.enemies[i].o_color === 'yellow') {
-                    update_result = this.enemies[i].update(this.ground.y)
+                    update_result = this.enemies[i].update(this.ground.y_pos)
                     if (this.enemies[i].proxyX() < 100) {
                         this.enemies[i].shot_cooldown -= 2
                     } else if (this.enemies[i].proxyX() < 200) {
                         this.enemies[i].shot_cooldown -= 1
                     }
                 } else if (this.enemies[i].o_color === 'limegreen') {
-                    update_result = this.enemies[i].update(this.ground.y, this.star_size)
-                    if (this.enemies[i].x > this.width - this.enemies[i].width) {
-                        this.enemies[i].x = this.width - this.enemies[i].width
+                    update_result = this.enemies[i].update(this.ground.y_pos, this.star_size)
+                    if (this.enemies[i].x_pos > this.width - this.enemies[i].width) {
+                        this.enemies[i].x_pos = this.width - this.enemies[i].width
                         if (this.enemies[i].stun_ct < 0) this.enemies[i].vx = -8
-                    } else if (this.enemies[i].x < 0) {
-                        this.enemies[i].x = 0
+                    } else if (this.enemies[i].x_pos < 0) {
+                        this.enemies[i].x_pos = 0
                         if (this.enemies[i].stun_ct < 0) this.enemies[i].vx = 8
                     }
                     ///// CHECK COLLISION WITH GREEN SHADOW /////
                     if (this.player.hurt_count < 0 && this.player.health > 0) {
                         for (let j=0; j<this.enemies[i].shadows.length; j++) {
-                            if (checkCTX(this.enemies[i].shadows[j], this.sword_cnv.width, this.sword_ctx_data)) {
+                            let sword_hit = checkCTX(this.enemies[i].shadows[j], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
+                            if (sword_hit) {
                                 this.enemies[i].shadows.splice(j, 1)
                             } else if (this.enemies[i].shadows[j].checkCollideRec(this.player)) {
                                 if (this.player.shield > 0) {
@@ -543,31 +304,31 @@ class World {
                     }
                 } else if (this.enemies[i].o_color === 'mediumblue') {
                     this.enemies[i].update()
-                    if (this.enemies[i].x > this.width - this.enemies[i].width) {
-                        this.enemies[i].x = this.width - this.enemies[i].width
+                    if (this.enemies[i].x_pos > this.width - this.enemies[i].width) {
+                        this.enemies[i].x_pos = this.width - this.enemies[i].width
                         this.enemies[i].runaway_cooldown = 180
                         this.enemies[i].runaway_dir = -1
-                    } else if (this.enemies[i].x < 0) {
-                        this.enemies[i].x = 0
+                    } else if (this.enemies[i].x_pos < 0) {
+                        this.enemies[i].x_pos = 0
                         this.enemies[i].runaway_cooldown = 180
                         this.enemies[i].runaway_dir = 1
                     }
                 } else if (this.enemies[i].o_color === 'darkorchid') {
-                    update_result = this.enemies[i].update(this.ground.y, this.portals)
+                    update_result = this.enemies[i].update(this.ground.y_pos, this.portals)
                 } else if (this.enemies[i].o_color === 'white') {
                     update_result = this.enemies[i].update()
-                    if (this.enemies[i].y > this.ground.y - this.enemies[i].height) {
+                    if (this.enemies[i].y_pos > this.ground.y_pos - this.enemies[i].height) {
                         this.enemies[i].segment_dir *= -1
                     }
                 } else {
                     update_result = this.enemies[i].update()
                 }
                 ///// CHECK ON SWORD /////
-                let sword_hit = checkCTX(this.enemies[i], this.sword_cnv.width, this.sword_ctx_data)
+                let sword_hit = checkCTX(this.enemies[i], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
                 if (sword_hit) {
                     this.enemies[i].dead = true
                     this.player.score += 1
-                    if (this.enemies[i].y + this.enemies[i].height < this.ground.y) {
+                    if (this.enemies[i].y_pos + this.enemies[i].height < this.ground.y_pos) {
                         let rad = Math.PI * Math.random() * 2
                         for (let j = 0; j < 3; j++) {
                             let vel_vect = {
@@ -721,16 +482,16 @@ class World {
             for (let j=0; j<this.enemies[i].shots.length; j++) {
                 this.enemies[i].shots[j].update()
                 ///// OFF WORLD /////
-                if (this.enemies[i].shots[j].x < 0 || this.enemies[i].shots[j].x > this.width ||
-                    this.enemies[i].shots[j].y < 0 || this.enemies[i].shots[j].y > this.height) {
+                if (this.enemies[i].shots[j].x_pos < 0 || this.enemies[i].shots[j].x_pos > this.width ||
+                    this.enemies[i].shots[j].y_pos < 0 || this.enemies[i].shots[j].y_pos > this.height) {
                         this.enemies[i].shots.splice(j, 1)
                     continue
                 }
                 ///// CHECK ON SWORD /////
-                let sword_hit = checkCTX(this.enemies[i].shots[j], this.sword_cnv.width, this.sword_ctx_data))
+                let sword_hit = checkCTX(this.enemies[i].shots[j], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
                 if (sword_hit) {
                     let shot = new StarShot(
-                        this.enemies[i].shots[j].x, this.enemies[i].shots[j].y,
+                        this.enemies[i].shots[j].x_pos, this.enemies[i].shots[j].y_pos,
                         this.star_size, this.star_size, sword_hit, this.player, 180)
                     shot.vx = -this.enemies[i].shots[j].vx * 1
                     shot.vy = -this.enemies[i].shots[j].vy * 1
@@ -748,12 +509,12 @@ class World {
                     } else if (this.enemies[i].shots[j].life < 30) {
                         this.enemies[i].shots[j].width += 4 / this.enemies[i].shots[j].life
                         this.enemies[i].shots[j].height += 4 / this.enemies[i].shots[j].life
-                        this.enemies[i].shots[j].x -= 2 / this.enemies[i].shots[j].life
-                        this.enemies[i].shots[j].y -= 2 / this.enemies[i].shots[j].life
+                        this.enemies[i].shots[j].x_pos -= 2 / this.enemies[i].shots[j].life
+                        this.enemies[i].shots[j].y_pos -= 2 / this.enemies[i].shots[j].life
                     }
                     ///// CHECK HIT ON PURPLE PORTAL & ON STAR JUMPER /////
                     if (this.enemies[i].shots[j]) {
-                        this.checkPurpleShot(this.enemies[i], this.enemies[i].shots[j], j)
+                        this.checkPurpleShot(this.enemies[i].shots[j], j)
                         ///// IF YOU'RE NOT HURT /////
                         if (this.player.hurt_count < 0 && this.player.health > 0) {
                             if (this.enemies[i].shots[j].checkCollideRec(this.player)) {
@@ -810,7 +571,6 @@ class World {
         for (let i=0; i<this.portals.length; i++) {
             portals.push(this.portals[i].dictXYV())
         }
-        console.log(portals)
         return portals
     }
 
@@ -979,7 +739,7 @@ class World {
         grd.addColorStop(".9", "darkgreen")
         grd.addColorStop("1", "#331900")
         this.world_ctx.fillStyle = grd
-        this.world_ctx.fillRect(0, this.ground.y, this.width, this.height)
+        this.world_ctx.fillRect(0, this.ground.y_pos, this.width, this.height)
 
         for (let i=1; i<this.platforms.length; i++) {
             this.platforms[i].draw(this.world_ctx)
@@ -1026,7 +786,7 @@ class World {
             for (let enemy in this.pvp_data) {
                 let guy = this.pvp_data[enemy]
                 this.world_ctx.fillStyle = guy.color
-                this.world_ctx.fillRect(guy.x, guy.y, this.player.width, this.player.height)
+                this.world_ctx.fillRect(guy.x_pos, guy.y_pos, this.player.width, this.player.height)
             }
         }
 
@@ -1047,59 +807,16 @@ class World {
                 this.portals[i].draw(this.world_ctx)
             }
         }
-        this.player.draw(this.world_ctx, this.sword_ctx, this.ground.y)
+        this.player.draw(this.world_ctx, this.sword_ctx, this.ground.y_pos)
         this.health_star.draw(this.world_ctx)
 
         this.world_ctx.resetTransform()
         this.sword_ctx.resetTransform()
     }
-    checkExtraDraw(shot) {
-        if (shot.bolt_pivot) {
-            if (shot.bolt_pivot.life > 0) {
-                this.world_ctx.lineWidth = 3
-                this.world_ctx.beginPath()
-                this.world_ctx.moveTo(shot.bolt_pivot.x, shot.bolt_pivot.y)
-                this.world_ctx.lineTo(shot.cx(), shot.cy())
-                let grd = this.world_ctx.createLinearGradient(
-                    shot.bolt_pivot.x, shot.bolt_pivot.y, shot.x, shot.y)
-                grd.addColorStop("0", "rgba(0,0,0,0)")
-                grd.addColorStop("1", shot.color)
-                this.world_ctx.strokeStyle = grd
-                this.world_ctx.stroke()
-                shot.bolt_pivot.life -= 1
-            }
-        } else if (shot.ice_trail) {
-            for (let j=0; j<shot.ice_trail.length; j++) {
-                shot.ice_trail[j].draw(this.world_ctx)
-            }
-        }
-    }
-
-    addRedTarget(x, y, shooter, shot, portal=false) {
-        if (this.enemies.length > 0) {
-            if (shooter === this.player) {
-                shot.target = getClosestTarget(x, y, this.enemies)
-            } else {
-                shot.target = this.player
-            }
-        } else {
-            ///// CHANGE TO REGULAR SHOT IF NO TARGETS /////
-            let save_vx = shot.vx  // AT LEAST KEEP IT RED-FAST
-            let save_vy = shot.vy  // AT LEAST KEEP IT RED-FAST
-            if (!portal) {
-                x = shooter.cx()
-                y = shooter.cy()
-            }
-            shot = new StarShot(x, y, this.star_size, this.star_size, 'red', this.player)
-            shot.vx = save_vx
-            shot.vy = save_vy
-        }
-        return shot
-    }
 
     getTransX() {
         // trans_x is how far left to shift to get the right part of the world into view
-        let trans_x = -this.player.x + this.world_cnv.width/2
+        let trans_x = -this.player.x_pos + this.world_cnv.width/2
         // if the adjustment would go past the end of the world...
         if (trans_x > 0) {
             return  0

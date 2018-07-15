@@ -1,7 +1,7 @@
 
 class Enemy extends Rectangle {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color)
         this.target = target
         this.move_cooldown = 30
         this.shot_cooldown = 120
@@ -14,7 +14,7 @@ class Enemy extends Rectangle {
         let x_dist = Math.abs(this.cx() - this.target.cx())
         if (!(x_dist > min_x && x_dist < max_x)) {
             let dir_switch = x_dist > min_x ? 1 : -1                // INSIDE MIN_X, MOVE AWAY
-            this.x += this.vx * this.getDirX() * dir_switch
+            this.x_pos += this.vx * this.getDirX() * dir_switch
             return true
         }
     }
@@ -30,8 +30,8 @@ class Enemy extends Rectangle {
 }
 
 class WhiteEnemy extends Enemy {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color, target)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color, target)
         this.fire_range_x = 600
         this.fire_range_y = 80
         this.vx = 1.5
@@ -49,11 +49,11 @@ class WhiteEnemy extends Enemy {
                 let ty = this.target.cy()
                 if (this.segment > 0) {
                     this.segment -= 1
-                    this.y += this.vy * this.segment_dir
+                    this.y_pos += this.vy * this.segment_dir
                 } else if (ey > ty + 10) {
-                    this.y -= this.vy
+                    this.y_pos -= this.vy
                 } else if (ey < ty - 10) {
-                    this.y += this.vy
+                    this.y_pos += this.vy
                 } else {
                     this.segment = Math.floor(random(30, 50))
                     this.segment_dir = Math.random() < 0.5 ? 1 : -1
@@ -64,8 +64,8 @@ class WhiteEnemy extends Enemy {
 }
 
 class RedEnemy extends Enemy {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color, target)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color, target)
         this.shot_cooldown = 999
         this.jump_range_x = 300
         this.vx = 0
@@ -82,7 +82,7 @@ class RedEnemy extends Enemy {
             this.charge_dir = this.getDirX()
         ///// CHARGE /////
         } else if (this.move_cooldown < 0 && this.on_ground && this.stun_ct < 0 && this.freeze_ct < 0) {
-            this.x += this.vx * this.charge_dir
+            this.x_pos += this.vx * this.charge_dir
             if (this.vx < this.vx_to_jump) this.vx += this.accel_vx
             if (this.vx >= this.vx_to_jump) {
                 if (this.proxyX() < this.jump_range_x) {
@@ -94,20 +94,20 @@ class RedEnemy extends Enemy {
             }
         ///// AIRBORN /////
         } else if (!this.on_ground) {
-            this.y += this.vy
+            this.y_pos += this.vy
             this.vy += 0.4
             this.vx *= 0.99
-            this.x += this.vx * this.charge_dir
-            if (this.y + this.vy + this.height > ground_y) {
+            this.x_pos += this.vx * this.charge_dir
+            if (this.y_pos + this.vy + this.height > ground_y) {
                 this.on_ground = true
-                this.y = ground_y - this.height
+                this.y_pos = ground_y - this.height
                 this.vy = 0
                 this.move_cooldown = 300
             }
         //// STUNNED OR FROZEN ////
         } else if (this.stun_ct > 0 || this.freeze_ct > 0) {
             this.vx *= 0.97
-            this.x += this.vx * this.charge_dir
+            this.x_pos += this.vx * this.charge_dir
         //// COME OUT OF STUNNED OR FROZEN ////
         } else if(this.stun_ct === 0 || this.freeze_ct === 0) {
             this.move_cooldown = 210
@@ -117,7 +117,7 @@ class RedEnemy extends Enemy {
         } else {
             if (this.move_cooldown > 210) {
                 this.vx *= 0.97
-                this.x += this.vx * this.charge_dir
+                this.x_pos += this.vx * this.charge_dir
             } else if(this.move_cooldown === 210) {
                 this.shot_cooldown = Math.floor(random(120, 178))
                 this.vx = 0
@@ -130,8 +130,8 @@ class RedEnemy extends Enemy {
 }
 
 class OrangeEnemy extends Enemy {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color, target)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color, target)
         this.vx = 1.5
         this.vy = 0.8
         this.move_ct = 20
@@ -160,21 +160,21 @@ class OrangeEnemy extends Enemy {
                 } else {
                     if (Math.random() < 0.5) this.vx *= -1
                 }
-                if (this.y < 30) {
+                if (this.y_pos < 30) {
                     this.vy = Math.abs(this.vy)
-                } else if (this.y > 250) {
+                } else if (this.y_pos > 250) {
                     this.vy = -Math.abs(this.vy)
                 } else {
                     if (Math.random() < 0.7) this.vy *= -1
                 }
-                this.x += this.vx
-                this.y += this.vy
+                this.x_pos += this.vx
+                this.y_pos += this.vy
             } else if (this.stun_ct > 0 || this.freeze_ct > 0) {
-                this.x += this.vx / 3
-                this.y += this.vy / 3
+                this.x_pos += this.vx / 3
+                this.y_pos += this.vy / 3
             } else {
-                this.x += this.vx
-                this.y += this.vy
+                this.x_pos += this.vx
+                this.y_pos += this.vy
             }
 
         }
@@ -182,8 +182,8 @@ class OrangeEnemy extends Enemy {
 }
 
 class YellowEnemy extends Enemy {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color, target)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color, target)
         this.land_ct = 0
         this.accel_y = 0.5
     }
@@ -191,28 +191,28 @@ class YellowEnemy extends Enemy {
         this.land_ct -= 1
         if (this.stun_ct === 0 || this.freeze_ct === 0) {
             this.land_ct = 0
-            if (this.y + this.height < ground_y) {
+            if (this.y_pos + this.height < ground_y) {
                 this.move_cooldown = 0
             } else {
                 this.move_cooldown = 180
             }
         } else if (this.stun_ct < 0 && this.freeze_ct < 0) {
             if (this.move_cooldown < 0) {
-                this.y += this.move_cooldown / 30
-                if ((this.y < 100 && Math.random < 0.02) || this.y < 20) {
+                this.y_pos += this.move_cooldown / 30
+                if ((this.y_pos < 100 && Math.random < 0.02) || this.y_pos < 20) {
                     this.vy = 0
                     this.land_ct = 50
                     this.move_cooldown = 360
                 }
                 return true
             } else {
-                if (this.y + this.height < ground_y) {
+                if (this.y_pos + this.height < ground_y) {
                     this.vy += this.accel_y + (50 - this.land_ct)
-                    this.y += this.vy
+                    this.y_pos += this.vy
                 } else if (this.land_ct > 0) {
-                    this.y = ground_y - this.height + 6
+                    this.y_pos = ground_y - this.height + 6
                 } else {
-                    this.y = ground_y - this.height
+                    this.y_pos = ground_y - this.height
                     return true
                 }
             }
@@ -221,8 +221,8 @@ class YellowEnemy extends Enemy {
 }
 
 class GreenEnemy extends Enemy {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color, target)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color, target)
         this.on_ground = false
         this.vx = 0
         this.vy = 0
@@ -233,19 +233,18 @@ class GreenEnemy extends Enemy {
     update(ground_y, star_size) {
         let right_dir = this.getDirX()
         let proxy_x = this.proxyX()
-        this.x += this.vx
+        this.x_pos += this.vx
         this.jump_timer -= 1
         if (!this.on_ground) {
-            this.y += this.vy
+            this.y_pos += this.vy
             this.vy += 0.4
-            // if (this.freeze_ct > 0) console.log(this.y, this.vy, this.height, ground_y)
-            if (this.y + this.vy + this.height > ground_y) {
+            if (this.y_pos + this.vy + this.height > ground_y) {
                 this.on_ground = true
-                this.y = ground_y - this.height
+                this.y_pos = ground_y - this.height
                 this.vy = 0
             } else if (this.jump_timer > 0 && this.stun_ct < 0 && this.freeze_ct < 0) {
                 if (this.jump_timer % 5 === 0) {
-                    let shadow = new Rectangle(this.x, this.y, this.width, this.height, 'lime')
+                    let shadow = new Rectangle(this.x_pos, this.y_pos, this.width, this.height, 'lime')
                     shadow.life = 35
                     this.shadows.push(shadow)
                 }
@@ -255,7 +254,7 @@ class GreenEnemy extends Enemy {
                 if (Math.abs(this.vx) > 6 && proxy_x < 150) {               ///// JUMP
                     this.vx /= 1.8
                     this.vy = -8 - Math.abs(this.vx)
-                    this.y += this.vy
+                    this.y_pos += this.vy
                     this.on_ground = false
                     this.jump_timer = 40
                 } else if (Math.abs(this.vx) > 3) {                         ///// ACCELERATE INTO JUMP
@@ -268,7 +267,7 @@ class GreenEnemy extends Enemy {
                 if (Math.abs(this.vx) < 0.07) {
                     this.shot_cooldown = Math.floor(random(35, 55))
                     this.vy = -random(12, 15)
-                    this.y += this.vy
+                    this.y_pos += this.vy
                     this.on_ground = false
                 } else {
                     this.shot_cooldown = 9999
@@ -286,8 +285,8 @@ class GreenEnemy extends Enemy {
 }
 
 class BlueEnemy extends Enemy {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color, target)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color, target)
         this.vx = 1.5
         this.vy = -3.0    // GET TO TOP OF WORLD QUICKLY WHEN INSTANTIATED
         this.fire_range_x = 400
@@ -298,17 +297,17 @@ class BlueEnemy extends Enemy {
     update() {
         this.runaway_cooldown -= 1
         if (this.move_cooldown < 0 && this.stun_ct < 0 && this.freeze_ct < 0) {
-            if (this.y < 30){
+            if (this.y_pos < 30){
                 this.vy = random(0.2, 0.3)
-            } else if (this.y > 70 && this.vy > 0) {
+            } else if (this.y_pos > 70 && this.vy > 0) {
                 this.vy = -random(0.4, 0.8)
             }
             if (this.runaway_cooldown > 0) {
-                this.x += this.vx * this.runaway_dir
+                this.x_pos += this.vx * this.runaway_dir
             } else if (this.keepDistanceX(this.range_adj, 100 + this.range_adj)) {
-                this.y += this.vy
+                this.y_pos += this.vy
             } else {
-                this.y += this.vy * 2
+                this.y_pos += this.vy * 2
             }
         }
     }
@@ -319,8 +318,8 @@ class BlueEnemy extends Enemy {
 }
 
 class PurpleEnemy extends Enemy {
-    constructor(x, y, width, height, color, target) {
-        super(x, y, width, height, color, target)
+    constructor(x_pos, y_pos, width, height, color, target) {
+        super(x_pos, y_pos, width, height, color, target)
         this.vx = 1.8
         this.vy = 0
         this.accel_y = 0.2
@@ -336,43 +335,43 @@ class PurpleEnemy extends Enemy {
                 this.width = this.o_width
                 let closest_3_portals = this.getClosest3Portals(ground_y, portals)
                 let target_portal = closest_3_portals[Math.floor(Math.random() * 3)]
-                let dx = target_portal.x - this.target.cx()
-                let dy = target_portal.y - this.target.cy()
+                let dx = target_portal.x_pos - this.target.cx()
+                let dy = target_portal.y_pos - this.target.cy()
                 let dist = Math.sqrt(dx ** 2 + dy ** 2)
-                this.x = target_portal.x + dx / dist * (target_portal.rad + this.width + 20)
-                this.y = target_portal.y + dy / dist * (target_portal.rad + this.height + 20)
+                this.x_pos = target_portal.x_pos + dx / dist * (target_portal.rad + this.width + 20)
+                this.y_pos = target_portal.y_pos + dy / dist * (target_portal.rad + this.height + 20)
                 this.vy = -1
                 this.falling = true
                 return true
-            } else if (this.y < ground_y - this.height) {
-                this.y += this.vy
+            } else if (this.y_pos < ground_y - this.height) {
+                this.y_pos += this.vy
                 this.vy += this.accel_y
-                if (!this.falling) this.x -= this.vx * this.getDirX()
+                if (!this.falling) this.x_pos -= this.vx * this.getDirX()
             } else if (this.move_cooldown < 40) {
-                this.x -= this.vx * this.getDirX() + 0.3
+                this.x_pos -= this.vx * this.getDirX() + 0.3
                 this.width -= 0.6
                 this.height -= 0.4
-                this.y = ground_y - this.height
+                this.y_pos = ground_y - this.height
             } else {
-                this.x -= this.vx * this.getDirX()
-                this.y = ground_y - this.height - 0.01
+                this.x_pos -= this.vx * this.getDirX()
+                this.y_pos = ground_y - this.height - 0.01
                 this.vy = -random(1.5, 2.5)
                 this.falling = false
             }
         } else {
-            this.x -= this.vx * this.getDirX() * this.stun_ct / 180
-            if (this.y < ground_y - this.height) {
-                this.y += this.vy
+            this.x_pos -= this.vx * this.getDirX() * this.stun_ct / 180
+            if (this.y_pos < ground_y - this.height) {
+                this.y_pos += this.vy
                 this.vy += this.accel_y
             } else {
-                this.y = ground_y - this.height
+                this.y_pos = ground_y - this.height
             }
         }
     }
     getClosest3Portals(ground_y, portals) {
         let distances = []
         for (let i=0; i<portals.length; i++) {
-            if (portals[i].y < ground_y - 50 && portals[i].y > 50) {
+            if (portals[i].y_pos < ground_y - 50 && portals[i].y_pos > 50) {
                 let dx = this.target.cx() - portals[i].x
                 let dy = this.target.cy() - portals[i].y
                 let dx_dy_sq = dx ** 2 + dy ** 2

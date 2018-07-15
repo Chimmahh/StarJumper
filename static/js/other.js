@@ -1,16 +1,4 @@
 
-class Image {
-    constructor(path, x, y) {
-        this.element = document.createElement('img')
-        this.element.src = path
-        this.x = x
-        this.y = y
-    }
-    draw(world_ctx) {
-        world_ctx.drawImage(this.element, this.x, this.y)
-    }
-}
-
 function random(lower, upper) {
     return lower + Math.random()*(upper-lower)
 }
@@ -28,8 +16,8 @@ function getClosestTarget(x, y, enemies) {
     let smallest_separation2 = 999999
     for (let i=0; i<enemies.length; i++) {
         if (!enemies[i].dead) {
-            let change_in_x = x - enemies[i].x + enemies[i].width / 2
-            let change_in_y = y - enemies[i].y + enemies[i].height / 2
+            let change_in_x = x - enemies[i].x_pos + enemies[i].width / 2
+            let change_in_y = y - enemies[i].y_pos + enemies[i].height / 2
             let separation2 = change_in_x * change_in_x + change_in_y * change_in_y
             if (separation2 < smallest_separation2) {
                 smallest_separation2 = separation2
@@ -59,212 +47,58 @@ class KeyTracker {
 
 class Rectangle {
     constructor(x, y, width, height, color) {
-        this.x = x
-        this.y = y
+        this.x_pos = x
+        this.y_pos = y
         this.width = width
         this.height = height
         this.color = color
         this.rgb = new RGBColor(color)
     }
     update() {
-        this.x += this.vx
-        this.y += this.vy
+        this.x_pos += this.vx
+        this.y_pos += this.vy
     }
     draw(ctx) {
         ctx.fillStyle = this.color
-        ctx.fillRect(this.x, this.y, this.width, this.height)
+        ctx.fillRect(this.x_pos, this.y_pos, this.width, this.height)
     }
     left() {
-        return this.x
+        return this.x_pos
     }
     right() {
-        return this.x + this.width
+        return this.x_pos + this.width
     }
     top() {
-        return this.y
+        return this.y_pos
     }
     bottom() {
-        return this.y + this.height
+        return this.y_pos + this.height
     }
     cx() {
-        return this.x + this.width / 2
+        return this.x_pos + this.width / 2
     }
     cy() {
-        return this.y + this.height / 2
+        return this.y_pos + this.height / 2
     }
     dictXY() {
-        return {"x": this.x, "y": this.y}
+        return {"x": this.x_pos, "y": this.y_pos}
     }
     dictXYV() {
-        return {"x": this.x, "y": this.y, "vx": this.vx, "vy": this.vy}
+        return {"x": this.x_pos, "y": this.y_pos, "vx": this.vx, "vy": this.vy}
     }
     checkCollideRec(rec) {
-        let dx = (this.x + this.width/2) - (rec.x + rec.width/2)
-        let dy = (this.y + this.height/2) - (rec.y + rec.height/2)
+        let dx = (this.x_pos + this.width/2) - (rec.x_pos + rec.width/2)
+        let dy = (this.y_pos + this.height/2) - (rec.y_pos + rec.height/2)
         let x_width = (this.width + rec.width) / 2
         let x_height = (this.height + rec.height) / 2
         return Math.abs(dx) <= x_width && Math.abs(dy) <= x_height
     }
 }
 
-class StarShot extends Rectangle {
-    constructor(x, y, width, height, color, shooter, life = 360) {
-        super(x, y, width, height, color)
-        this.ground_timer = 0
-        this.life = life
-        this.shooter = shooter
-        this.speed = this.speed = color_data[color].shot_speed
-    }
-}
-
-class RedShot extends StarShot {
-    constructor(x, y, width, height, color, shooter) {
-        super(x, y, width, height, color, shooter)
-    }
-    update() {
-        if (this.target) {
-            let shot_velocities = getShotVelocities(
-                this.target.x + this.target.width / 2, this.target.y + this.target.height / 2,
-                this.x + this.width / 2, this.y + this.height / 2, this.speed)
-            this.vx = (this.vx * 39 + shot_velocities.vx) / 40
-            this.vy = (this.vy * 39 + shot_velocities.vy) / 40
-        }
-        this.x += this.vx
-        this.y += this.vy
-    }
-}
-
-class YellowShot extends StarShot {
-    constructor(x, y, width, height, color, shooter, life=360, original=true) {
-        super(x, y, width, height, color, shooter, life)
-        this.bolt_pivot = {x:0, y:0, life:0}
-        this.original = original
-        this.split_cooldown = 40
-        this.last_dir = Math.random() < 0.5 ? 1 : -1
-    }
-    update() {
-        if (this.life % 15 === 14) {
-            this.bolt_pivot = {x: this.x + this.width/2,
-                               y: this.y + this.height/2, life: 15}
-            let angle_in_rad = Math.atan2(this.vy, this.vx)
-            let rand = random(0.25, 0.40) * this.last_dir
-            this.vx = Math.cos(angle_in_rad + rand) * this.speed
-            this.vy = Math.sin(angle_in_rad + rand) * this.speed
-            this.last_dir *= -1
-            if (this.original) {
-                if (Math.random() < 0.3 && this.split_cooldown < 0) {
-                    let shot = new YellowShot(
-                        this.x, this.y, this.width, this.height, this.color, this.shooter,
-                            Math.floor(this.life), false)
-                    shot.speed = this.speed
-                    shot.vx = Math.cos(angle_in_rad - rand) * this.speed
-                    shot.vy = Math.sin(angle_in_rad - rand) * this.speed
-                    shot.bolt_pivot = this.bolt_pivot
-                    this.shooter.shots.push(shot)
-                    this.split_cooldown = 35
-                }
-            }
-        }
-        this.x += this.vx
-        this.y += this.vy
-        this.split_cooldown -= 1
-    }
-}
-
-class BlueShot extends StarShot {
-    constructor(x, y, width, height, color, shooter) {
-        super(x, y, width, height, color, shooter)
-        this.ct = 0
-        this.ice_trail = []
-    }
-    update() {
-        this.ct += 1
-        if (this.ice_trail.length > 0) {
-            for (let i = 0; i < this.ice_trail.length; i++) {
-                this.ice_trail[i].life -= 1
-                if (this.ice_trail[i].life === 0) {
-                    this.ice_trail.splice(i, 1)
-                } else if (this.ice_trail[i].life < 10) {
-                    this.ice_trail[i].color = 'deepskyblue'
-                } else if (this.ice_trail[i].life < 20) {
-                    this.ice_trail[i].color = 'dodgerblue'
-                } else {
-                    this.ice_trail[i].color = 'blue'
-                }
-            }
-        }
-        if (this.ct % 5 === 0) {
-            this.ice_trail.push(new Rectangle(this.x, this.y, this.width, this.height, this.color))
-            this.ice_trail[this.ice_trail.length-1].life = 25
-        }
-        this.x += this.vx
-        this.y += this.vy
-    }
-}
-
-function checkPurpleShot(shooter, shot, index) {
-    ///// BOUNCE OFF BOUNDARIES /////
-    if (shot.color === 'darkorchid') {
-        if (shot.x > this.width - this.star_size) {
-            shot.vx *= -1
-            shot.x = this.width - this.star_size - shot.vx
-        } else if (shot.x < 0) {
-            shot.vx *= -1
-            shot.x = shot.vx
-        } else if (shot.y < 0) {
-            shot.vy *= -1
-            shot.y += shot.vy
-        } else if (shot.y + this.star_size > this.height - this.ground_height) {
-            shot.vy *= -1
-            shot.y = this.height - this.star_size - this.ground_height + shot.vy
-        }
-        ///// COLLISION WITH PORTALS = CHANGE SHOT TYPE /////
-        for (let j = 0; j < this.portals.length; j++) {
-            if (this.portals[j].checkCollideRec(shot)) {
-                let new_shot = new color_data[this.portals[j].color].shot(
-                    shot.x, shot.y, this.star_size, this.star_size, this.portals[j].color, shooter)
-                let shot_vel = getShotVelocities(
-                    shot.vx, shot.vy, 0, 0, color_data[this.portals[j].color].shot_speed)
-                new_shot.vx = shot_vel.vx
-                new_shot.vy = shot_vel.vy
-                ///// SPECIAL CASES - RED & ORANGE /////
-                if (this.portals[j].color === 'red') {
-                    new_shot = this.addRedTarget(new_shot.x, new_shot.y, shooter, new_shot, true)
-                } else if (this.portals[j].color === 'orange') {
-                    this.addOrangeBuck(shooter, new_shot)
-                }
-                shooter.shots.push(new_shot)
-                shooter.shots.splice(index, 1)
-                break
-            }
-        }
-    } else if (shot.y + this.star_size > this.height - this.ground_height) {
-        shot.y = this.height + this.star_size + this.ground_height
-        shot.ground_timer = 30
-    }
-}
-
-function addOrangeBuck(shooter, shot) {
-    let angle_in_rad = Math.atan2(shot.vy, shot.vx)
-    ///// 2 MINI-SHOT LOOP /////
-    for (let i=0; i<2; i++) {
-        ///// 1ST MINI-SHOT CLOCKWISE, 2ND COUNTER-CLOCKWISE /////
-        let rand = (i === 0) ? random(0.1, 0.15) : random(-0.15, -0.1)
-        let mini_v = {vx: Math.cos(angle_in_rad + rand),
-                      vy: Math.sin(angle_in_rad + rand)}
-        let mini_shot = new StarShot(shot.x, shot.y, this.star_size, this.star_size, 'orange', this.player, 180)
-        ///// WEAKER MINI-SHOTS THAN MAIN SHOT /////
-        rand = random(2.5, 3)
-        mini_shot.vx = mini_v.vx * rand
-        mini_shot.vy = mini_v.vy * rand
-        shooter.shots.push(mini_shot)
-    }
-}
-
 class Portal {
-    constructor(x, y, radius, color, vx=0, vy=0) {
-        this.x = x
-        this.y = y
+    constructor(x_pos, y_pos, radius, color, vx=0, vy=0) {
+        this.x_pos = x_pos
+        this.y_pos = y_pos
         this.vx = vx
         this.vy = vy
         this.rad = radius
@@ -272,29 +106,29 @@ class Portal {
         this.vib_count = 0
     }
     draw(world_ctx) {
-        let grd = world_ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.rad);
+        let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, this.rad);
         grd.addColorStop(0, 'transparent');
         grd.addColorStop(1, this.color);
         world_ctx.beginPath()
-        world_ctx.arc(this.x, this.y, this.rad, 0, 2 * Math.PI, false)
+        world_ctx.arc(this.x_pos, this.y_pos, this.rad, 0, 2 * Math.PI, false)
         world_ctx.fillStyle = grd;
         world_ctx.fill();
     }
     update(rad_multi) {
         this.rad = 10 + rad_multi * 20
-        this.x += this.vx
-        this.y += this.vy
+        this.x_pos += this.vx
+        this.y_pos += this.vy
     }
     checkCollideRec(rec) {
-        let dx = this.x - (rec.x + rec.width / 2)
-        let dy = this.y - (rec.y + rec.height / 2)
+        let dx = this.x_pos - (rec.x_pos + rec.width / 2)
+        let dy = this.y_pos - (rec.y_pos + rec.height / 2)
         let x_width = (this.rad*2 + rec.width) / 2
         let x_height = (this.rad*2 + rec.height) / 2
         return Math.abs(dx) <= x_width && Math.abs(dy) <= x_height
     }
     checkCollideCir(cir) {
-        let change_in_x = this.x - cir.x
-        let change_in_y = this.y - cir.y
+        let change_in_x = this.x_pos - cir.x
+        let change_in_y = this.y_pos - cir.y
         let separation2 = change_in_x*change_in_x + change_in_y * change_in_y
         let combo_len = this.rad + cir.rad
         let combo_len2 = combo_len * combo_len
@@ -308,12 +142,12 @@ class Portal {
             let nudge_x = nudge * x_part_of_separation
             let nudge_y = nudge * y_part_of_separation
             // NUDGE YOUR BALLS BACK TO TOUCHING EDGES
-            this.x -= nudge_x
-            this.y -= nudge_y
-            cir.x += nudge_x
-            cir.y += nudge_y
+            this.x_pos -= nudge_x
+            this.y_pos -= nudge_y
+            cir.x_pos += nudge_x
+            cir.y_pos += nudge_y
             // CALCULATE NEW VELOCITIES
-            let collision_angle = Math.atan2(cir.y - this.y, cir.x - this.x)
+            let collision_angle = Math.atan2(cir.y_pos - this.y_pos, cir.x_pos - this.x_pos)
             let vel_vect_len_i = Math.sqrt(this.vx ** 2 + this.vy ** 2)
             let vel_vect_len_j = Math.sqrt(cir.vx ** 2 + cir.vy ** 2)
             if (vel_vect_len_i + vel_vect_len_j > 0) {
@@ -332,35 +166,35 @@ class Portal {
                 cir.vx = cosAngle * vx_final_j - sinAngle * vy_new_plane_j
                 cir.vy = sinAngle * vx_final_j + cosAngle * vy_new_plane_j
                 // MOVE IN NEW DIRECTION ONE TICK
-                this.x += this.vx
-                this.y += this.vy
-                cir.x += cir.vx
-                cir.y += cir.vy
+                this.x_pos += this.vx
+                this.y_pos += this.vy
+                cir.x_pos += cir.vx
+                cir.y_pos += cir.vy
             }
             return true
         }
         return false
     }
-    setLeft(x) {
-        this.x = x + this.rad
+    setLeft(x_pos) {
+        this.x_pos = x_pos + this.rad
     }
-    setRight(x) {
-        this.x = x - this.rad
+    setRight(x_pos) {
+        this.x_pos = x_pos - this.rad
     }
-    setTop(y) {
-        this.y = y + this.rad
+    setTop(y_pos) {
+        this.y_pos = y_pos + this.rad
     }
-    setBottom(y) {
-        this.y = y - this.rad
+    setBottom(y_pos) {
+        this.y_pos = y_pos - this.rad
     }
     dictXYV() {
-        return {"x": this.x, "y": this.y, "vx": this.vx, "vy": this.vy}
+        return {"x": this.x_pos, "y": this.y_pos, "vx": this.vx, "vy": this.vy}
     }
 }
 
 class HealthStar extends Rectangle {
-    constructor(x, y, width, height, color) {
-        super(x, y, width, height, color);
+    constructor(x_pos, y_pos, width, height, color) {
+        super(x_pos, y_pos, width, height, color);
         this.setRandomVelocities()
         this.last_teleport = {}
     }
@@ -372,10 +206,10 @@ class HealthStar extends Rectangle {
     }
 }
 
-function checkCTX(rec, cnv_width, ctx_data) {
+function checkCTX(rec, cnv_width, ctx_data, trans_x) {
     if (rec.width + rec.height < 20) {
         ///// CHECK CENTER OF SMALL RECTANGLES /////
-        let x = Math.round(rec.cx() + this.trans_x)
+        let x = Math.round(rec.cx() + trans_x)
         let y = Math.round(rec.cy())
         let pix = (4 * cnv_width * (y - 1)) + (4 * x) - 1
         if (ctx_data[pix] > 0) {
@@ -386,8 +220,8 @@ function checkCTX(rec, cnv_width, ctx_data) {
         }
     } else {
         ///// CHECK EACH CORNER OF LARGER RECTANGLES /////
-        let x = Math.round(rec.x + this.trans_x)
-        let y = Math.round(rec.y)
+        let x = Math.round(rec.x_pos + this.trans_x)
+        let y = Math.round(rec.y_pos)
         let top_left =      (4 * cnv_width * (y - 1))              + (4 * x) - 1
         let top_right =     (4 * cnv_width * (y - 1))              + (4 * (x + rec.width)) - 1
         let bottom_left =   (4 * cnv_width * (y + rec.height - 1)) + (4 * x) - 1
@@ -432,6 +266,18 @@ function getCTXColor(r, g, b) {                 // IF THE SWORD HITS A PLAYER OR
         return 'orange'
     } else {
         return 'darkorchid'
+    }
+}
+
+class Image {
+    constructor(path, x, y) {
+        this.element = document.createElement('img')
+        this.element.src = path
+        this.x_pos = x
+        this.y_pos = y
+    }
+    draw(world_ctx) {
+        world_ctx.drawImage(this.element, this.x_pos, this.y)
     }
 }
 

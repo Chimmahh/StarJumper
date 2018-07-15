@@ -192,6 +192,7 @@
     {% load static %}
     <script src="{% static 'js/color_parser.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/other.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/shots.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/star_jumper.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/enemy.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/world.js' %}"  type="text/javascript"></script>
@@ -264,8 +265,8 @@
                 socket.send(JSON.stringify({
                     "command": "reconcile",
                     "game": {{ game.id }},
-                    "x": world.player.x,
-                    "y": world.player.y,
+                    "x": world.player.x_pos,
+                    "y": world.player.y_pos,
                     "vy": world.player.vy,
                     "color": world.player.color,
                 }))
@@ -327,13 +328,13 @@
                     if (data.username) {
                         if (!world.pvp_data.hasOwnProperty(data.username)) {
                             if (data.type === 'reconcile') {
-                                world.pvp_data[data.username] = new StarJumper(guy.x, guy.y, guy.color, new KeyTracker())
+                                world.pvp_data[data.username] = new StarJumper(data.x, data.y, data.color, new KeyTracker())
                             }
                         } else {
                             guy = world.pvp_data[data.username]
                             if (data.type === 'reconcile') {
-                                guy.x = data.x
-                                guy.y = data.y
+                                guy.x_pos = data.x
+                                guy.y_pos = data.y
                                 guy.vy = data.vy
                                 guy.color = data.color
                             } else if (data.type === 'keydown') {
@@ -346,12 +347,11 @@
                                 guy.sword_trail.push(data.sword_trail)
                             } else if (data.type === 'portal') {
                                 guy.color = data.color
-                                guy.x = data.x
-                                guy.y = data.y
+                                guy.x_pos = data.x
+                                guy.y_pos = data.y
                             }
                         }
-                    }
-                    if (data.type === 'host') {
+                    } else if (data.type === 'host') {
                         world.player.host = true
                     } else if (data.type === 'reconcile_host') {
                         world.host_update = data.host_update
