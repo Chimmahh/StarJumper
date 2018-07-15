@@ -202,6 +202,65 @@ class BlueShot extends StarShot {
     }
 }
 
+function checkPurpleShot(shooter, shot, index) {
+    ///// BOUNCE OFF BOUNDARIES /////
+    if (shot.color === 'darkorchid') {
+        if (shot.x > this.width - this.star_size) {
+            shot.vx *= -1
+            shot.x = this.width - this.star_size - shot.vx
+        } else if (shot.x < 0) {
+            shot.vx *= -1
+            shot.x = shot.vx
+        } else if (shot.y < 0) {
+            shot.vy *= -1
+            shot.y += shot.vy
+        } else if (shot.y + this.star_size > this.height - this.ground_height) {
+            shot.vy *= -1
+            shot.y = this.height - this.star_size - this.ground_height + shot.vy
+        }
+        ///// COLLISION WITH PORTALS = CHANGE SHOT TYPE /////
+        for (let j = 0; j < this.portals.length; j++) {
+            if (this.portals[j].checkCollideRec(shot)) {
+                let new_shot = new color_data[this.portals[j].color].shot(
+                    shot.x, shot.y, this.star_size, this.star_size, this.portals[j].color, shooter)
+                let shot_vel = getShotVelocities(
+                    shot.vx, shot.vy, 0, 0, color_data[this.portals[j].color].shot_speed)
+                new_shot.vx = shot_vel.vx
+                new_shot.vy = shot_vel.vy
+                ///// SPECIAL CASES - RED & ORANGE /////
+                if (this.portals[j].color === 'red') {
+                    new_shot = this.addRedTarget(new_shot.x, new_shot.y, shooter, new_shot, true)
+                } else if (this.portals[j].color === 'orange') {
+                    this.addOrangeBuck(shooter, new_shot)
+                }
+                shooter.shots.push(new_shot)
+                shooter.shots.splice(index, 1)
+                break
+            }
+        }
+    } else if (shot.y + this.star_size > this.height - this.ground_height) {
+        shot.y = this.height + this.star_size + this.ground_height
+        shot.ground_timer = 30
+    }
+}
+
+function addOrangeBuck(shooter, shot) {
+    let angle_in_rad = Math.atan2(shot.vy, shot.vx)
+    ///// 2 MINI-SHOT LOOP /////
+    for (let i=0; i<2; i++) {
+        ///// 1ST MINI-SHOT CLOCKWISE, 2ND COUNTER-CLOCKWISE /////
+        let rand = (i === 0) ? random(0.1, 0.15) : random(-0.15, -0.1)
+        let mini_v = {vx: Math.cos(angle_in_rad + rand),
+                      vy: Math.sin(angle_in_rad + rand)}
+        let mini_shot = new StarShot(shot.x, shot.y, this.star_size, this.star_size, 'orange', this.player, 180)
+        ///// WEAKER MINI-SHOTS THAN MAIN SHOT /////
+        rand = random(2.5, 3)
+        mini_shot.vx = mini_v.vx * rand
+        mini_shot.vy = mini_v.vy * rand
+        shooter.shots.push(mini_shot)
+    }
+}
+
 class Portal {
     constructor(x, y, radius, color, vx=0, vy=0) {
         this.x = x
@@ -310,6 +369,69 @@ class HealthStar extends Rectangle {
         let rand_vy = random(0.5, 1) * (Math.random < 0.5 ? -1 : 1)
         this.vx = rand_vx
         this.vy = rand_vy
+    }
+}
+
+function checkCTX(rec, cnv_width, ctx_data) {
+    if (rec.width + rec.height < 20) {
+        ///// CHECK CENTER OF SMALL RECTANGLES /////
+        let x = Math.round(rec.cx() + this.trans_x)
+        let y = Math.round(rec.cy())
+        let pix = (4 * cnv_width * (y - 1)) + (4 * x) - 1
+        if (ctx_data[pix] > 0) {
+            let r = ctx_data[pix - 3]
+            let g = ctx_data[pix - 2]
+            let b = ctx_data[pix - 1]
+            return this.getCTXColor(r, g, b)
+        }
+    } else {
+        ///// CHECK EACH CORNER OF LARGER RECTANGLES /////
+        let x = Math.round(rec.x + this.trans_x)
+        let y = Math.round(rec.y)
+        let top_left =      (4 * cnv_width * (y - 1))              + (4 * x) - 1
+        let top_right =     (4 * cnv_width * (y - 1))              + (4 * (x + rec.width)) - 1
+        let bottom_left =   (4 * cnv_width * (y + rec.height - 1)) + (4 * x) - 1
+        let bottom_right =  (4 * cnv_width * (y + rec.height - 1)) + (4 * (x + rec.width)) - 1
+        if (ctx_data[top_left] > 0) {
+            let r = ctx_data[top_left - 3]
+            let g = ctx_data[top_left - 2]
+            let b = ctx_data[top_left - 1]
+            return this.getCTXColor(r, g, b)
+        } else if (ctx_data[top_right] > 0) {
+            let r = ctx_data[top_right - 3]
+            let g = ctx_data[top_right - 2]
+            let b = ctx_data[top_right - 1]
+            return this.getCTXColor(r, g, b)
+        } else if (ctx_data[bottom_left] > 0) {
+            let r = ctx_data[bottom_left - 3]
+            let g = ctx_data[bottom_left - 2]
+            let b = ctx_data[bottom_left - 1]
+            return this.getCTXColor(r, g, b)
+        } else if (ctx_data[bottom_right] > 0) {
+            let r = ctx_data[bottom_right - 3]
+            let g = ctx_data[bottom_right - 2]
+            let b = ctx_data[bottom_right - 1]
+            return this.getCTXColor(r, g, b)
+        }
+        return false
+    }
+    return false
+}
+function getCTXColor(r, g, b) {                 // IF THE SWORD HITS A PLAYER OR A BULLET getCTXColor
+    if (r === g === b) {                        // DETERMINES THE COLOR OF THE SWORD TRAIL BASE ON
+        return 'white'                          // R, G, B RELATIONSHIPS. COLOR IS RETURNED FOR BULLET
+    } else if (r > 0 && g + b === 0) {          // REBOUND AND ENEMY DEATH BURST.......................
+        return 'red'                            // THIS APPROACH WAS NECESSARY BECAUSE THE GRADIENT OF
+    } else if (b > 0 && r + g === 0) {          // THE SWORD TRAIL RESULTS IN A RANGE OF R/G/B COMBOS.
+        return 'mediumblue'
+    } else if (r === g) {
+        return 'yellow'
+    } else if (r === b) {
+        return 'limegreen'
+    } else if (b === 0) {
+        return 'orange'
+    } else {
+        return 'darkorchid'
     }
 }
 

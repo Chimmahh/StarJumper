@@ -46,8 +46,6 @@ class Player(AsyncJsonWebsocketConsumer):
         new_game_player = GamePlayer(game=game, player=self.scope["user"])
         new_game_player.save()
         players_in_game = GamePlayer.objects.all().count()
-        print(players_in_game)
-        print('!!!!!!!!!!!!!!!!!!!!!!!!')
         if players_in_game == 1:
             await self.send_json(
                 {

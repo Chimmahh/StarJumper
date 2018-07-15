@@ -31,7 +31,7 @@ class World {
 
         ////// STAR JUMPER!!! ///////
         this.player = new StarJumper(sword_cnv.width/2 - 10, sword_cnv.height-this.ground_height - 20,
-            20, 40, this.colors[color_index], key_tracker)
+            'red', key_tracker)
 
         ///// LEFT CLICK - SHOOT STAR ///////
         document.body.onclick = (e) => {
@@ -82,13 +82,28 @@ class World {
 
     world_extra_initiate(portals=false, stars=false, health=false) {
         ///// STARS /////
-        let x, y
         if (stars) {
             for (let i=0; i<stars.length; i++) {
                 let star = new Rectangle(stars[i].x, stars[i].y, this.star_size, this.star_size, 'white')
                 this.platforms.push(star)
             }
+            ////// PORTALS ///////
+            for (let i=0; i<this.colors.length; i++) {
+                let p1 = new Portal(portals[i].x, portals[i].y, 5, this.colors[i],
+                    portals[i].vx, portals[i].vy)
+                let p2 = new Portal(portals[i+1].x, portals[i+1].y, 5, this.colors[i],
+                    portals[i+1].vx, portals[i+1].vy)
+                p1.portal_pair = p2
+                p2.portal_pair = p1
+                this.portals.push(p1)
+                this.portals.push(p2)
+            }
+            ////// HEALTH STAR ///////
+            this.health_star = new HealthStar(health.x, health.y, this.star_size, this.star_size, 'deeppink')
+            this.health_star.vx = health.vx
+            this.health_star.vy = health.vy
         } else {
+            let x, y
             for (let i=0; i<50; i++) {
                 x = random(10, this.width-10)
                 y = random(10, this.height-this.ground_height-100)
@@ -98,24 +113,22 @@ class World {
             ////// PORTALS ///////
             for (let i=0; i<this.colors.length; i++) {
                 let radius = 10 + Math.random() * 10;           // PORTALS
-                x = portals[i*2].x || random(radius, this.width - radius)
-                y = portals[i*2].y || random(radius, this.height * 0.8)
+                x = random(radius, this.width - radius)
+                y = random(radius, this.height * 0.8)
                 let p1 = new Portal(x, y, radius, this.colors[i], Math.random() - 0.5, Math.random() - 0.5)
-                x = portals[i*2 + 1].x || random(radius, this.width - radius)
-                y = portals[i*2 + 1].y || random(radius, this.height * 0.8)
+                x = random(radius, this.width - radius)
+                y = random(radius, this.height * 0.8)
                 let p2 = new Portal(x, y, radius, this.colors[i], Math.random() - 0.5, Math.random() - 0.5)
                 p1.portal_pair = p2
                 p2.portal_pair = p1
                 this.portals.push(p1)
                 this.portals.push(p2)
             }
-
+            ////// HEALTH STAR ///////
+            y = random(0, this.height * 0.8)
+            x = random(100, this.width - 100)
+            this.health_star = new HealthStar(x, y, this.star_size, this.star_size, 'deeppink')
         }
-        ////// HEALTH STAR ///////
-        x = health.x || random(100, this.width - 100)
-        y = health.y || random(0, this.height * 0.8)
-        console.log('heeeeeello')
-        this.health_star = new HealthStar(x, y, this.star_size, this.star_size, 'deeppink')
     }
 
     update() {
@@ -123,6 +136,7 @@ class World {
         if (this.player.host) {
             if (this.portals.length === 0) this.world_extra_initiate()
         } else if (this.host_update) {
+            // console.log(this.host_update)
             if (this.portals.length === 0) {
                 this.world_extra_initiate(this.host_update.portals, this.host_update.stars, this.host_update.health)
             } else {
@@ -134,6 +148,8 @@ class World {
                 }
                 this.health_star.x = this.host_update.health.x
                 this.health_star.y = this.host_update.health.y
+                this.health_star.vx = this.host_update.health.vx
+                this.health_star.vy = this.host_update.health.vy
             }
             this.host_update = false
         }
@@ -275,7 +291,7 @@ class World {
         ///// CHECK IF NORMAL STARS ARE INSIDE SWORD TRAIL /////
         for (let i=1; i<this.platforms.length; i++) {
             if (this.platforms[i].x + this.trans_x < this.world_cnv.width && this.platforms[i].x + this.trans_x > 0) {
-                let sword_hit = this.checkCTX(this.platforms[i])
+                let sword_hit = checkCTX(this.platforms[i], this.sword_cnv.width, this.sword_ctx_data)
                 if (sword_hit) {
                     this.platforms.splice(i, 1)
                     this.player.star_count += 1
@@ -415,18 +431,39 @@ class World {
     updateRumble() {
         for (let enemy in this.pvp_data) {
             let guy = this.pvp_data[enemy]
+            let rubbing = false
             if (guy.key_tracker.isKeyDown('ArrowLeft')
                 || guy.key_tracker.isKeyDown('a')
                 || guy.key_tracker.isKeyDown(('A'))) {
+                    if (guy.flip_count <= 0) {
+                        guy.facing = -1 // left
+                        ///// CHECK LEFT BUMP /////
+                        for (let i=0; i<this.platforms.length; i++) {
+                            if (guy.rubLeft(this.platforms[i])) {
+                                rubbing = true
+                                break
+                            }
+                        }
+                    }
+                    if (!rubbing) this.player.x -= this.player.mx
                     guy.x -= color_data[guy.color].mx
-                    ///// TOO FAR RIGHT /////
-                    if (guy.x < 0) guy.x = 0
+                    if (guy.x < 0) guy.x = 0                            // TOO FAR LEFT
             } else if (guy.key_tracker.isKeyDown('ArrowRight')
                 || guy.key_tracker.isKeyDown('d')
                 || guy.key_tracker.isKeyDown('D')) {
-                    guy.x += color_data[guy.color].mx
+                    if (this.player.flip_count <= 0) {
+                        this.player.facing = 1 // right
+                        ///// CHECK RIGHT BUMP /////
+                        for (let i = 0; i < this.platforms.length; i++) {
+                            if (this.player.rubRight(this.platforms[i])) {
+                                rubbing = true
+                                break
+                            }
+                        }
+                    }
+                    if (!rubbing) guy.x += guy.mx
                     ///// TOO FAR RIGHT /////
-                    if (guy.x + this.player.width > world.width) {
+                    if (guy.x + this.player.width > world.width) {      // TOO FAR RIGHT
                         guy.x = world.width - this.player.width
                     }
             } else if (guy.key_tracker.isKeyDown('ArrowUp')
@@ -486,7 +523,7 @@ class World {
                     ///// CHECK COLLISION WITH GREEN SHADOW /////
                     if (this.player.hurt_count < 0 && this.player.health > 0) {
                         for (let j=0; j<this.enemies[i].shadows.length; j++) {
-                            if (this.checkCTX(this.enemies[i].shadows[j])) {
+                            if (checkCTX(this.enemies[i].shadows[j], this.sword_cnv.width, this.sword_ctx_data)) {
                                 this.enemies[i].shadows.splice(j, 1)
                             } else if (this.enemies[i].shadows[j].checkCollideRec(this.player)) {
                                 if (this.player.shield > 0) {
@@ -526,7 +563,7 @@ class World {
                     update_result = this.enemies[i].update()
                 }
                 ///// CHECK ON SWORD /////
-                let sword_hit = this.checkCTX(this.enemies[i])
+                let sword_hit = checkCTX(this.enemies[i], this.sword_cnv.width, this.sword_ctx_data)
                 if (sword_hit) {
                     this.enemies[i].dead = true
                     this.player.score += 1
@@ -690,7 +727,7 @@ class World {
                     continue
                 }
                 ///// CHECK ON SWORD /////
-                let sword_hit = this.checkCTX(this.enemies[i].shots[j])
+                let sword_hit = checkCTX(this.enemies[i].shots[j], this.sword_cnv.width, this.sword_ctx_data))
                 if (sword_hit) {
                     let shot = new StarShot(
                         this.enemies[i].shots[j].x, this.enemies[i].shots[j].y,
@@ -770,9 +807,10 @@ class World {
 
     portalXYVs() {
         let portals = []
-        for (let i=1; i<this.portals.length; i++) {
+        for (let i=0; i<this.portals.length; i++) {
             portals.push(this.portals[i].dictXYV())
         }
+        console.log(portals)
         return portals
     }
 
@@ -787,68 +825,6 @@ class World {
         this.enemies.push(enemy)
     }
 
-    checkCTX(r) {
-        if (r.width + r.height < 20) {
-            ///// CHECK CENTER OF SMALL RECTANGLES /////
-            let x = Math.round(r.cx() + this.trans_x)
-            let y = Math.round(r.cy())
-            let pix = (4 * this.sword_cnv.width * (y - 1)) + (4 * x) - 1
-            if (this.sword_ctx_data[pix] > 0) {
-                let r = this.sword_ctx_data[pix - 3]
-                let g = this.sword_ctx_data[pix - 2]
-                let b = this.sword_ctx_data[pix - 1]
-                return this.getCTXColor(r, g, b)
-            }
-        } else {
-            ///// CHECK EACH CORNER OF LARGER RECTANGLES /////
-            let x = Math.round(r.x + this.trans_x)
-            let y = Math.round(r.y)
-            let top_left =      (4 * this.sword_cnv.width * (y - 1))            + (4 * x) - 1
-            let top_right =     (4 * this.sword_cnv.width * (y - 1))            + (4 * (x + r.width)) - 1
-            let bottom_left =   (4 * this.sword_cnv.width * (y + r.height - 1)) + (4 * x) - 1
-            let bottom_right =  (4 * this.sword_cnv.width * (y + r.height - 1)) + (4 * (x + r.width)) - 1
-            if (this.sword_ctx_data[top_left] > 0) {
-                let r = this.sword_ctx_data[top_left - 3]
-                let g = this.sword_ctx_data[top_left - 2]
-                let b = this.sword_ctx_data[top_left - 1]
-                return this.getCTXColor(r, g, b)
-            } else if (this.sword_ctx_data[top_right] > 0) {
-                let r = this.sword_ctx_data[top_right - 3]
-                let g = this.sword_ctx_data[top_right - 2]
-                let b = this.sword_ctx_data[top_right - 1]
-                return this.getCTXColor(r, g, b)
-            } else if (this.sword_ctx_data[bottom_left] > 0) {
-                let r = this.sword_ctx_data[bottom_left - 3]
-                let g = this.sword_ctx_data[bottom_left - 2]
-                let b = this.sword_ctx_data[bottom_left - 1]
-                return this.getCTXColor(r, g, b)
-            } else if (this.sword_ctx_data[bottom_right] > 0) {
-                let r = this.sword_ctx_data[bottom_right - 3]
-                let g = this.sword_ctx_data[bottom_right - 2]
-                let b = this.sword_ctx_data[bottom_right - 1]
-                return this.getCTXColor(r, g, b)
-            }
-            return false
-        }
-        return false
-    }
-    getCTXColor(r, g, b) {                          // IF THE SWORD HITS A PLAYER OR A BULLET getCTXColor
-        if (r === g === b) {                        // DETERMINES THE COLOR OF THE SWORD TRAIL BASE ON
-            return 'white'                          // R, G, B RELATIONSHIPS. COLOR IS RETURNED FOR BULLET
-        } else if (r > 0 && g + b === 0) {          // REBOUND AND ENEMY DEATH BURST.......................
-            return 'red'                            // THIS APPROACH WAS NECESSARY BECAUSE THE GRADIENT OF
-        } else if (b > 0 && r + g === 0) {          // THE SWORD TRAIL RESULTS IN A RANGE OF R/G/B COMBOS.
-            return 'mediumblue'
-        } else if (r === g) {
-            return 'yellow'
-        } else if (r === b) {
-            return 'limegreen'
-        } else if (b === 0) {
-            return 'orange'
-        } else {
-            return 'darkorchid'
-        }
-    }
     draw() {
         this.world_ctx.clearRect(0, 0, this.world_cnv.width, this.world_cnv.height)
         this.sword_ctx.clearRect(0, 0, this.sword_cnv.width, this.sword_cnv.height)
@@ -1098,22 +1074,7 @@ class World {
             }
         }
     }
-    addOrangeBuck(shooter, shot) {
-        let angle_in_rad = Math.atan2(shot.vy, shot.vx)
-        ///// 2 MINI-SHOT LOOP /////
-        for (let i=0; i<2; i++) {
-            ///// 1ST MINI-SHOT CLOCKWISE, 2ND COUNTER-CLOCKWISE /////
-            let rand = (i === 0) ? random(0.1, 0.15) : random(-0.15, -0.1)
-            let mini_v = {vx: Math.cos(angle_in_rad + rand),
-                          vy: Math.sin(angle_in_rad + rand)}
-            let mini_shot = new StarShot(shot.x, shot.y, this.star_size, this.star_size, 'orange', this.player, 180)
-            ///// WEAKER MINI-SHOTS THAN MAIN SHOT /////
-            rand = random(2.5, 3)
-            mini_shot.vx = mini_v.vx * rand
-            mini_shot.vy = mini_v.vy * rand
-            shooter.shots.push(mini_shot)
-        }
-    }
+
     addRedTarget(x, y, shooter, shot, portal=false) {
         if (this.enemies.length > 0) {
             if (shooter === this.player) {
@@ -1135,47 +1096,7 @@ class World {
         }
         return shot
     }
-    checkPurpleShot(shooter, shot, index) {
-        ///// BOUNCE OFF BOUNDARIES /////
-        if (shot.color === 'darkorchid') {
-            if (shot.x > this.width - this.star_size) {
-                shot.vx *= -1
-                shot.x = this.width - this.star_size - shot.vx
-            } else if (shot.x < 0) {
-                shot.vx *= -1
-                shot.x = shot.vx
-            } else if (shot.y < 0) {
-                shot.vy *= -1
-                shot.y += shot.vy
-            } else if (shot.y + this.star_size > this.height - this.ground_height) {
-                shot.vy *= -1
-                shot.y = this.height - this.star_size - this.ground_height + shot.vy
-            }
-            ///// COLLISION WITH PORTALS = CHANGE SHOT TYPE /////
-            for (let j = 0; j < this.portals.length; j++) {
-                if (this.portals[j].checkCollideRec(shot)) {
-                    let new_shot = new color_data[this.portals[j].color].shot(
-                        shot.x, shot.y, this.star_size, this.star_size, this.portals[j].color, shooter)
-                    let shot_vel = getShotVelocities(
-                        shot.vx, shot.vy, 0, 0, color_data[this.portals[j].color].shot_speed)
-                    new_shot.vx = shot_vel.vx
-                    new_shot.vy = shot_vel.vy
-                    ///// SPECIAL CASES - RED & ORANGE /////
-                    if (this.portals[j].color === 'red') {
-                        new_shot = this.addRedTarget(new_shot.x, new_shot.y, shooter, new_shot, true)
-                    } else if (this.portals[j].color === 'orange') {
-                        this.addOrangeBuck(shooter, new_shot)
-                    }
-                    shooter.shots.push(new_shot)
-                    shooter.shots.splice(index, 1)
-                    break
-                }
-            }
-        } else if (shot.y + this.star_size > this.height - this.ground_height) {
-            shot.y = this.height + this.star_size + this.ground_height
-            shot.ground_timer = 30
-        }
-    }
+
     getTransX() {
         // trans_x is how far left to shift to get the right part of the world into view
         let trans_x = -this.player.x + this.world_cnv.width/2

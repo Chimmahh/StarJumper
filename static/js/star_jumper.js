@@ -1,7 +1,7 @@
 
 class StarJumper extends Rectangle {
-    constructor(x, y, width, height, color, key_tracker) {
-        super(x, y, width, height, color);
+    constructor(x, y, color, key_tracker) {
+        super(x, y, 20, 40, color);
         this.host = false
         this.key_tracker = key_tracker
         this.vy = 0
@@ -28,6 +28,193 @@ class StarJumper extends Rectangle {
         this.flip_rotation = ''
         this.flip_type = ''
         this.facing = 1 // right
+    }
+
+    update(portals, platforms, world_width, world_height, cnv_width, trans_x, sword_ctx_data, health_star) {
+        ///// SEE IF PORTAL HITS PLAYER, EXCEPT LAST PORTAL EXITED //////
+        for (let i=0; i<portals.length; i++) {
+            if (portals[i] !== this.last_teleport) {
+                let hit_player = portals[i].checkCollideRec(this)
+                if (hit_player) {
+                    if (this.flip_count > 0) this.sword_trail.push([])
+                    this.vy = 0
+                    let new_color = portals[i].color
+                    this.color = new_color
+                    this.shield = color_data[new_color].shield
+                    this.mx = color_data[new_color].mx
+                    this.rgb = new RGBColor(new_color)
+                    this.last_teleport = portals[i].portal_pair
+                    this.display_shield_ct = 60
+                    this.x = portals[i].portal_pair.x
+                    this.y = portals[i].portal_pair.y
+                }
+            }
+        }
+        ///// JUMP IF ON PLATFORM ////////
+        if (this.key_tracker.isKeyDown('ArrowUp') || this.key_tracker.isKeyDown('W')
+            || this.key_tracker.isKeyDown('w') && this.on_platform) {
+                this.vy = -7
+                this.staa_ridin = false
+        }
+        ///// DEFAULT ASSUMPTIONS, RESET, INCREMENT, ETC //////
+        this.on_platform = false
+        this.star_cooldown -= 1
+        this.display_shield_ct -= 1
+        this.hurt_count -= 1
+        let rubbing = false
+        if (this.energy < this.base_energy) this.energy += 0.25
+        ///// GO RIGHT OR LEFT /////
+        if (!this.staa_ridin) {
+            if (this.key_tracker.isKeyDown('ArrowLeft') || this.key_tracker.isKeyDown('a') || this.key_tracker.isKeyDown(('A'))) {
+                if (this.flip_count <= 0) {
+                    this.facing = -1 // left
+                    ///// CHECK LEFT BUMP /////
+                    for (let i = 0; i < platforms.length; i++) {
+                        if (this.rubLeft(platforms[i])) {
+                            rubbing = true
+                            break
+                        }
+                    }
+                }
+                if (!rubbing) this.x -= this.mx
+                if (this.x < 0) this.x = 0                                                      // TOO FAR LEFT
+            } else if (this.key_tracker.isKeyDown('ArrowRight') || this.key_tracker.isKeyDown('d') || this.key_tracker.isKeyDown('D')) {
+                    if (this.flip_count <= 0) {
+                        this.facing = 1 // right
+                        ///// CHECK RIGHT BUMP /////
+                        for (let i = 0; i < platforms.length; i++) {
+                            if (this.rubRight(platforms[i])) {
+                                rubbing = true
+                                break
+                            }
+                        }
+                    }
+                    if (!rubbing) this.x += this.mx
+                    if (this.x + this.width > world_width) this.x = world_width - this.width        // TOO FAR RIGHT
+            }
+        }
+        ///// CHECK IF NORMAL STARS ARE INSIDE SWORD TRAIL /////
+        for (let i=1; i<platforms.length; i++) {
+            if (platforms[i].x + trans_x < cnv_width && platforms[i].x + trans_x > 0) {
+                let sword_hit = checkCTX(platforms[i], cnv_width, sword_ctx_data)
+                if (sword_hit) {
+                    platforms.splice(i, 1)
+                    this.star_count += 1
+                }
+            }
+        }
+        ///// IF RIDING ON HEALTH STAR /////
+        if (this.staa_ridin) {
+            this.on_platform = true
+            this.x = health_star.x - (this.width - health_star.width) / 2
+            this.y = health_star.y - this.height
+            ///// PICK UP HEALTH STAR  /////
+            if (this.key_tracker.isKeyDown('ArrowDown') || this.key_tracker.isKeyDown('s') || this.key_tracker.isKeyDown(' ')) {
+                this.staa_ridin = false
+                this.on_platform = false
+                this.star_cooldown = 10
+                if (this.health < 10) this.health += 1
+                health_star.x = random(0, this.width - this.star_size)
+                health_star.y = random(0, this.height - this.star_size - this.ground_height)
+                health_star.setRandomVelocities()
+            }
+        ///// IF YOU LAND ON THE HEALTH STAR /////
+        } else if (this.landed(health_star) && !this.staa_ridin) {
+            this.on_platform = true
+            this.staa_ridin = true
+            this.flip_count = 0
+        ///// IF YOU ARE FLIPPING, UP OR DOWN /////
+        } else if (this.flip_count > 0) {
+            if (this.flip_type === 'up') {
+                this.vy -= 0.06
+            } else {
+                this.vy += 0.5
+            }
+            this.y += this.vy
+            if (this.y + this.height + platforms[0].height >= world_height) {
+                this.y = world_height - this.height - platforms[0].height
+                this.flip_count = 0
+            } else {
+                this.flip_count -= 1
+            }
+        ///// OTHERWISE CHECK NORMAL HITS /////
+        } else {
+            for (let i=0; i<platforms.length; i++) {
+                ///// LANDED ON STAR OR GROUND /////
+                if (this.landed(platforms[i])) {
+                    this.y = platforms[i].top() - this.height
+                    this.vy = 0
+                    this.on_platform = true
+                    ///// DOWN KEY = PICK UP STAR /////
+                    if ((this.key_tracker.isKeyDown('ArrowDown') || this.key_tracker.isKeyDown('s'))
+                        && i > 0 && this.star_cooldown < 0) {
+                            this.star_cooldown = 10
+                            this.grabStar()
+                            platforms.splice(i, 1)
+                    }
+                    break
+                ///// CHECK HEAD BUMP /////
+                } else if (this.hitHead(platforms[i]) && this.vy < 0 && i > 0 && this.flip_count <= 0) {
+                    this.y = platforms[i].bottom() + 0.001
+                    this.vy = -0.015
+                    break
+                }
+            }
+        }
+        ///// UPDATE STAR SHOTS /////
+        for (let i=0; i<this.shots.length; i++) {
+            ///// UPDATE & BOUNCE SHOTS IN PLAY /////
+            if (this.shots[i].ground_timer === 0) {
+                ///// REMOVE EXPIRED STAR SHOTS
+                if (this.shots[i].life === 0) {
+                    this.shots.splice(i, 1)
+                } else {
+                    this.shots[i].update()
+                    if (this.shots[i].life < 30) {
+                        this.shots[i].width += 4 / this.shots[i].life
+                        this.shots[i].height += 4 / this.shots[i].life
+                        this.shots[i].x -= 2 / this.shots[i].life
+                        this.shots[i].y -= 2 / this.shots[i].life
+                    }
+                    ///// SLOW SHOTS IN PLAY /////
+                    this.shots[i].life -= 1
+                    this.shots[i].vx *= 0.994
+                    this.shots[i].vy *= 0.994
+                    this.shots[i].speed *= 0.994
+                    if (this.shots[i]) this.checkPurpleShot(, this.player.shots[i], i)
+                }
+            ///// REMOVE INFLATED SHOTS THAT HAVE REACHED 1 /////
+            } else if (this.player.shots[i].ground_timer === 1) {
+                this.player.shots.splice(i, 1)
+            ///// INFLATE STARS THAT HAVE HIT GROUND /////
+            } else {
+                this.player.shots[i].ground_timer -= 1
+                this.player.shots[i].height += 0.6
+                this.player.shots[i].width += 0.6
+                this.player.shots[i].y = this.height - this.ground_height - this.player.shots[i].height
+                this.player.shots[i].x -= 0.3
+            }
+        }
+        ///// MID AIR SCENARIOS - NOT ON A PLATFORM OR HEALTH STAR, NOT FLIPPING /////
+        if (!this.player.on_platform && !this.player.staa_ridin && this.player.flip_count <= 0) {
+            this.player.vy += 0.25
+            this.player.y += this.player.vy
+            ///// CHECK GROUND BOUNCE /////
+            if (this.player.y + this.player.height + this.ground.height >= this.height) {
+                this.player.y = this.height - this.player.height - this.ground.height
+            }
+            ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
+            if ((this.player.key_tracker.isKeyDown(' ') || this.player.key_tracker.isKeyDown('s'))
+                && this.player.star_count > 0 && this.player.star_cooldown < 0) {
+                    let new_star_x = this.player.x + (this.player.width - this.star_size) / 2
+                    let new_star_y = this.player.y + this.player.height
+                    let star = new Rectangle(new_star_x, new_star_y, this.star_size, this.star_size, 'white')
+                    this.platforms.push(star)
+                    this.player.vy = 0
+                    this.player.star_cooldown = 10
+                    this.player.star_count -= 1
+            }
+        }
     }
 
     draw(world_ctx, sword_ctx, ground_y) {
