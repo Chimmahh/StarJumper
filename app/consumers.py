@@ -118,12 +118,8 @@ class Player(AsyncJsonWebsocketConsumer):
             game.group_name,
             {
                 "type": "reconcile.client",
-                # "game_id": str(content["game"]),
                 "username": self.scope["user"].username,
-                "x": content["x"],
-                "y": content["y"],
-                "vy": content["vy"],
-                "color": content["color"]
+                "current": content["current"],
             }
         )
 
@@ -132,12 +128,8 @@ class Player(AsyncJsonWebsocketConsumer):
             await self.send_json(
                 {
                     "type": "reconcile",
-                    # "game": event["game_id"],
                     "username": event["username"],
-                    "x": event["x"],
-                    "y": event["y"],
-                    "vy": event["vy"],
-                    "color": event["color"]
+                    "current": event["current"],
                 }
             )
 

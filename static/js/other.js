@@ -81,10 +81,10 @@ class Rectangle {
         return this.y_pos + this.height / 2
     }
     dictXY() {
-        return {"x": this.x_pos, "y": this.y_pos}
+        return {"x_pos": this.x_pos, "y_pos": this.y_pos}
     }
     dictXYV() {
-        return {"x": this.x_pos, "y": this.y_pos, "vx": this.vx, "vy": this.vy}
+        return {"x_pos": this.x_pos, "y_pos": this.y_pos, "vx": this.vx, "vy": this.vy}
     }
     checkCollideRec(rec) {
         let dx = (this.x_pos + this.width/2) - (rec.x_pos + rec.width/2)
@@ -106,13 +106,13 @@ class Portal {
         this.vib_count = 0
     }
     draw(world_ctx) {
-        let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, this.rad);
-        grd.addColorStop(0, 'transparent');
-        grd.addColorStop(1, this.color);
+        let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, this.rad)
+        grd.addColorStop(0, 'transparent')
+        grd.addColorStop(1, this.color)
         world_ctx.beginPath()
         world_ctx.arc(this.x_pos, this.y_pos, this.rad, 0, 2 * Math.PI, false)
-        world_ctx.fillStyle = grd;
-        world_ctx.fill();
+        world_ctx.fillStyle = grd
+        world_ctx.fill()
     }
     update(rad_multi) {
         this.rad = 10 + rad_multi * 20
@@ -127,8 +127,8 @@ class Portal {
         return Math.abs(dx) <= x_width && Math.abs(dy) <= x_height
     }
     checkCollideCir(cir) {
-        let change_in_x = this.x_pos - cir.x
-        let change_in_y = this.y_pos - cir.y
+        let change_in_x = this.x_pos - cir.x_pos
+        let change_in_y = this.y_pos - cir.y_pos
         let separation2 = change_in_x*change_in_x + change_in_y * change_in_y
         let combo_len = this.rad + cir.rad
         let combo_len2 = combo_len * combo_len
@@ -188,7 +188,7 @@ class Portal {
         this.y_pos = y_pos - this.rad
     }
     dictXYV() {
-        return {"x": this.x_pos, "y": this.y_pos, "vx": this.vx, "vy": this.vy}
+        return {"x_pos": this.x_pos, "y_pos": this.y_pos, "vx": this.vx, "vy": this.vy}
     }
 }
 
@@ -220,7 +220,7 @@ function checkCTX(rec, cnv_width, ctx_data, trans_x) {
         }
     } else {
         ///// CHECK EACH CORNER OF LARGER RECTANGLES /////
-        let x = Math.round(rec.x_pos + this.trans_x)
+        let x = Math.round(rec.x_pos + trans_x)
         let y = Math.round(rec.y_pos)
         let top_left =      (4 * cnv_width * (y - 1))              + (4 * x) - 1
         let top_right =     (4 * cnv_width * (y - 1))              + (4 * (x + rec.width)) - 1
@@ -252,15 +252,15 @@ function checkCTX(rec, cnv_width, ctx_data, trans_x) {
     return false
 }
 function getCTXColor(r, g, b) {                 // IF THE SWORD HITS A PLAYER OR A BULLET getCTXColor
-    if (r === g === b) {                        // DETERMINES THE COLOR OF THE SWORD TRAIL BASE ON
+    if (r + g + b > 700) {                      // DETERMINES THE COLOR OF THE SWORD TRAIL BASE ON
         return 'white'                          // R, G, B RELATIONSHIPS. COLOR IS RETURNED FOR BULLET
     } else if (r > 0 && g + b === 0) {          // REBOUND AND ENEMY DEATH BURST.......................
         return 'red'                            // THIS APPROACH WAS NECESSARY BECAUSE THE GRADIENT OF
     } else if (b > 0 && r + g === 0) {          // THE SWORD TRAIL RESULTS IN A RANGE OF R/G/B COMBOS.
         return 'mediumblue'
-    } else if (r === g) {
+    } else if (r == g) {
         return 'yellow'
-    } else if (r === b) {
+    } else if (r == b) {
         return 'limegreen'
     } else if (b === 0) {
         return 'orange'

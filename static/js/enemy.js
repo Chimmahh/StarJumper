@@ -372,8 +372,8 @@ class PurpleEnemy extends Enemy {
         let distances = []
         for (let i=0; i<portals.length; i++) {
             if (portals[i].y_pos < ground_y - 50 && portals[i].y_pos > 50) {
-                let dx = this.target.cx() - portals[i].x
-                let dy = this.target.cy() - portals[i].y
+                let dx = this.target.cx() - portals[i].x_pos
+                let dy = this.target.cy() - portals[i].y_pos
                 let dx_dy_sq = dx ** 2 + dy ** 2
                 distances.push([portals[i], dx_dy_sq])
             }

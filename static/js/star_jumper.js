@@ -1,9 +1,9 @@
 
 class StarJumper extends Rectangle {
-    constructor(x_pos, y_pos, color, key_tracker) {
+    constructor(x_pos, y_pos, color) {
         super(x_pos, y_pos, 20, 40, color);
         this.host = false
-        this.key_tracker = key_tracker
+        this.key_tracker = new KeyTracker
         this.vy = 0
         this.vx = 0
         this.mx = color_data[color].mx
@@ -13,6 +13,7 @@ class StarJumper extends Rectangle {
         this.staa_ridin = false
         this.hurt_count = 0
         this.last_teleport = {}
+        this.freeze_ct = 0
         this.display_shield_ct = 0
         this.score = 0
         this.base_health = 10
@@ -51,8 +52,8 @@ class StarJumper extends Rectangle {
             }
         }
         ///// JUMP IF ON PLATFORM ////////
-        if (this.key_tracker.isKeyDown('ArrowUp') || this.key_tracker.isKeyDown('W')
-            || this.key_tracker.isKeyDown('w') && this.on_platform) {
+        if ((this.key_tracker.isKeyDown('ArrowUp') || this.key_tracker.isKeyDown('W')
+            || this.key_tracker.isKeyDown('w')) && this.on_platform) {
                 this.vy = -7
                 this.staa_ridin = false
         }
@@ -60,12 +61,13 @@ class StarJumper extends Rectangle {
         this.on_platform = false
         this.star_cooldown -= 1
         this.display_shield_ct -= 1
-        this.hurt_count -= 1
-        let rubbing = false
+        this.freeze_ct -= 1
+        if (this.freeze_ct < 0) this.hurt_count -= 1
         if (this.energy < this.base_energy) this.energy += 0.25
+        let rubbing = false
         ///// GO RIGHT OR LEFT /////
         if (!this.staa_ridin) {
-            if (this.key_tracker.isKeyDown('ArrowLeft') || this.key_tracker.isKeyDown('a') || this.key_tracker.isKeyDown(('A'))) {
+            if (this.key_tracker.isKeyDown('ArrowLeft') || this.key_tracker.isKeyDown('a') || this.key_tracker.isKeyDown('A')) {
                 if (this.flip_count <= 0) {
                     this.facing = -1 // left
                     ///// CHECK LEFT BUMP /////
@@ -76,21 +78,33 @@ class StarJumper extends Rectangle {
                         }
                     }
                 }
-                if (!rubbing) this.x_pos -= this.mx
-                if (this.x_pos < 0) this.x_pos = 0                                                      // TOO FAR LEFT
+                if (!rubbing) {
+                    if (this.freeze_ct < 0) {
+                        this.x_pos -= this.mx
+                    } else {
+                        this.x_pos -= this.mx / 2
+                    }
+                    if (this.x_pos < 0) this.x_pos = 0
+                }
             } else if (this.key_tracker.isKeyDown('ArrowRight') || this.key_tracker.isKeyDown('d') || this.key_tracker.isKeyDown('D')) {
-                    if (this.flip_count <= 0) {
-                        this.facing = 1 // right
-                        ///// CHECK RIGHT BUMP /////
-                        for (let i = 0; i < platforms.length; i++) {
-                            if (this.rubRight(platforms[i])) {
-                                rubbing = true
-                                break
-                            }
+                if (this.flip_count <= 0) {
+                    this.facing = 1 // right
+                    ///// CHECK RIGHT BUMP /////
+                    for (let i = 0; i < platforms.length; i++) {
+                        if (this.rubRight(platforms[i])) {
+                            rubbing = true
+                            break
                         }
                     }
-                    if (!rubbing) this.x_pos += this.mx
-                    if (this.x_pos + this.width > world_width) this.x_pos = world_width - this.width        // TOO FAR RIGHT
+                }
+                if (!rubbing) {
+                    if (this.freeze_ct < 0) {
+                        this.x_pos += this.mx
+                    } else {
+                        this.x_pos += this.mx / 2
+                    }
+                    if (this.x_pos + this.width > world_width) this.x_pos = world_width - this.width
+                }
             }
         }
         ///// IF RIDING ON HEALTH STAR /////
@@ -99,14 +113,15 @@ class StarJumper extends Rectangle {
             this.x_pos = health_star.x_pos - (this.width - health_star.width) / 2
             this.y_pos = health_star.y_pos - this.height
             ///// PICK UP HEALTH STAR  /////
-            if (this.key_tracker.isKeyDown('ArrowDown') || this.key_tracker.isKeyDown('s') || this.key_tracker.isKeyDown(' ')) {
-                this.staa_ridin = false
-                this.on_platform = false
-                this.star_cooldown = 10
-                if (this.health < 10) this.health += 1
-                health_star.x_pos = random(100, world_width - 100)
-                health_star.y_pos = random(100, world_height - 100)
-                health_star.setRandomVelocities()
+            if (this.key_tracker.isKeyDown('ArrowDown') || this.key_tracker.isKeyDown('s')
+                || this.key_tracker.isKeyDown('S') || this.key_tracker.isKeyDown(' ')) {
+                    this.staa_ridin = false
+                    this.on_platform = false
+                    this.star_cooldown = 10
+                    if (this.health < 10) this.health += 1
+                    health_star.x_pos = random(100, world_width - 100)
+                    health_star.y_pos = random(100, world_height - 100)
+                    health_star.setRandomVelocities()
             }
         ///// IF YOU LAND ON THE HEALTH STAR /////
         } else if (this.landed(health_star) && !this.staa_ridin) {
@@ -121,8 +136,8 @@ class StarJumper extends Rectangle {
                 this.vy += 0.5
             }
             this.y_pos += this.vy
-            if (this.y_pos + this.height >= platforms[0].y) {
-                this.y_pos = platforms[0].y - this.height
+            if (this.y_pos + this.height >= platforms[0].y_pos) {
+                this.y_pos = platforms[0].y_pos - this.height
                 this.flip_count = 0
             } else {
                 this.flip_count -= 1
@@ -136,8 +151,8 @@ class StarJumper extends Rectangle {
                     this.vy = 0
                     this.on_platform = true
                     ///// DOWN KEY = PICK UP STAR /////
-                    if ((this.key_tracker.isKeyDown('ArrowDown') || this.key_tracker.isKeyDown('s'))
-                        && i > 0 && this.star_cooldown < 0) {
+                    if ((this.key_tracker.isKeyDown('ArrowDown') || this.key_tracker.isKeyDown('s')
+                        || this.key_tracker.isKeyDown('S')) && i > 0 && this.star_cooldown < 0) {
                             this.star_cooldown = 10
                             this.grabStar()
                             platforms.splice(i, 1)
@@ -165,15 +180,18 @@ class StarJumper extends Rectangle {
                         this.shots[i].height += 4 / this.shots[i].life
                         this.shots[i].x_pos -= 2 / this.shots[i].life
                         this.shots[i].y_pos -= 2 / this.shots[i].life
+                        if (this.shots[i].bottom() >= platforms[0].y_pos) {
+                            this.shots.splice(i, 1)
+                            continue
+                        }
                     }
                     ///// SLOW SHOTS IN PLAY /////
                     this.shots[i].life -= 1
                     this.shots[i].vx *= 0.994
                     this.shots[i].vy *= 0.994
                     this.shots[i].speed *= 0.994
-                    if (this.shots[i]) {
-                        this.checkPurpleShot(this.shots[i], i, platforms[0].y, portals, this, enemies)
-                    }
+                    let result = checkPurpleShot(this.shots[i], i, platforms[0], portals, this, enemies)
+                    if (result) this.shots.splice(i, 1)
                 }
             ///// REMOVE INFLATED SHOTS THAT HAVE REACHED 1 /////
             } else if (this.shots[i].ground_timer === 1) {
@@ -183,7 +201,7 @@ class StarJumper extends Rectangle {
                 this.shots[i].ground_timer -= 1
                 this.shots[i].height += 0.6
                 this.shots[i].width += 0.6
-                this.shots[i].y_pos = platforms[0].y - this.shots[i].height
+                this.shots[i].y_pos = platforms[0].y_pos - this.shots[i].height
                 this.shots[i].x_pos -= 0.3
             }
         }
@@ -192,34 +210,40 @@ class StarJumper extends Rectangle {
             this.vy += 0.25
             this.y_pos += this.vy
             ///// CHECK GROUND BOUNCE /////
-            if (this.y_pos + this.height >= platforms[0].y) {
-                this.y_pos = this.height - this.height - this.ground.height
+            if (this.y_pos + this.height >= platforms[0].y_pos) {
+                this.y_pos = platforms[0].y_pos - this.height
             }
             ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
-            if ((this.key_tracker.isKeyDown(' ') || this.key_tracker.isKeyDown('s'))
-                && this.star_count > 0 && this.star_cooldown < 0) {
+            if ((this.key_tracker.isKeyDown(' ') || this.key_tracker.isKeyDown('s') || this.key_tracker.isKeyDown('S')
+                || this.key_tracker.isKeyDown('ArrowDown')) && this.star_count > 0 && this.star_cooldown < 0) {
                     let new_star_x = this.x_pos + (this.width - health_star.width) / 2
                     let new_star_y = this.y_pos + this.height
                     let star = new Rectangle(new_star_x, new_star_y, health_star.width, health_star.height, 'white')
                     platforms.push(star)
-                    this.player.vy = 0
-                    this.player.star_cooldown = 10
-                    this.player.star_count -= 1
+                    this.vy = 0
+                    this.star_cooldown = 10
+                    this.star_count -= 1
             }
         }
     }
 
     draw(world_ctx, sword_ctx, ground_y) {
         let draw_me = true
-        if (this.hurt_count > 60 && this.hurt_count % 3 !== 0) {
-            draw_me = false
-        } else if (this.hurt_count > 0 && this.hurt_count % 2 === 0) {
-            draw_me = false
+        if (this.freeze_ct < 0) {
+            if (this.hurt_count > 60 && this.hurt_count % 3 !== 0) {
+                draw_me = false
+            } else if (this.hurt_count > 0 && this.hurt_count % 2 === 0) {
+                draw_me = false
+            }
         }
         if (draw_me) {
             world_ctx.save();
             let grd = world_ctx.createLinearGradient(0, 0, this.width * this.facing, -this.height / 4)
-            grd.addColorStop(0, this.color)
+            if (this.freeze_ct < 0) {
+                grd.addColorStop(0, this.color)
+            } else {
+                grd.addColorStop(0, "lightblue")
+            }
             grd.addColorStop(1, "white")
             world_ctx.fillStyle = grd
             world_ctx.translate(this.x_pos + this.width / 2, this.y_pos + this.height / 2)
@@ -240,6 +264,7 @@ class StarJumper extends Rectangle {
             world_ctx.font = 'bold 18px Arial'
             world_ctx.fillText(this.shield, this.x_pos + 5.5, this.y_pos - 10)
         }
+
         ///// FLIPPING === SWORD SEQUENCE /////
         if (this.flip_count > 0) {
             let cx = this.cx()
@@ -289,6 +314,7 @@ class StarJumper extends Rectangle {
                 world_ctx.stroke()
             }
         }
+        ///// DRAW SWORD /////
         if (this.sword_trail.length > 0) {
             if (this.sword_trail[0].length === 0 && this.sword_trail.length>1) {
                 this.sword_trail.splice(0, 1)
@@ -330,6 +356,15 @@ class StarJumper extends Rectangle {
                 }
             }
         }
+        ///// SHOTS /////
+        for (let i=0; i<this.shots.length; i++) {
+            this.shots[i].draw(world_ctx)
+            if (this.shots[i].trail) {
+                for (let j=0; j<this.shots[i].trail.length; j++) {
+                    this.shots[i].trail[j].draw(world_ctx)
+                }
+            }
+        }
     }
     withinVert(r) {
         return this.top() < r.bottom()
@@ -346,7 +381,6 @@ class StarJumper extends Rectangle {
             && this.withinVert(r)
     }
     landed(r) {
-        // console.log(this.y_pos, this.bottom(),this.vy, r.top())
         return this.left() <= r.right()
             && this.right() >= r.left()
             && this.bottom() - this.vy <= r.top()
@@ -359,6 +393,7 @@ class StarJumper extends Rectangle {
             && this.top() + this.vy <= r.bottom()
     }
     grabStar() {
+        this.on_platform = false
         this.star_count += 1
         this.energy += 20
         if (this.energy > 100) this.energy = 100

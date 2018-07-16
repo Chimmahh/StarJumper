@@ -1,17 +1,17 @@
 
 class StarShot extends Rectangle {
-    constructor(x_pos, y_pos, width, height, color, shooter, life = 360) {
-        super(x_pos, y_pos, width, height, color)
+    constructor(x_pos, y_pos, color, shooter, life=360) {
+        super(x_pos, y_pos, 3, 3, color)
         this.ground_timer = 0
         this.life = life
         this.shooter = shooter
-        this.speed = this.speed = color_data[color].shot_speed
+        this.speed = color_data[color].shot_speed
     }
 }
 
 class RedShot extends StarShot {
-    constructor(x_pos, y_pos, width, height, color, shooter) {
-        super(x_pos, y_pos, width, height, color, shooter)
+    constructor(x_pos, y_pos, color, shooter) {
+        super(x_pos, y_pos, color, shooter)
     }
     update() {
         if (this.target) {
@@ -26,75 +26,97 @@ class RedShot extends StarShot {
     }
 }
 
-class YellowShot extends StarShot {
-    constructor(x_pos, y_pos, width, height, color, shooter, life=360, original=true) {
-        super(x_pos, y_pos, width, height, color, shooter, life)
-        this.bolt_pivot = {x:0, y:0, life:0}
-        this.original = original
-        this.split_cooldown = 40
-        this.last_dir = Math.random() < 0.5 ? 1 : -1
-    }
-    update() {
-        if (this.life % 15 === 14) {
-            this.bolt_pivot = {x_pos: this.x_pos + this.width/2,
-                               y_pos: this.y_pos + this.height/2, life: 15}
-            let angle_in_rad = Math.atan2(this.vy, this.vx)
-            let rand = random(0.25, 0.40) * this.last_dir
-            this.vx = Math.cos(angle_in_rad + rand) * this.speed
-            this.vy = Math.sin(angle_in_rad + rand) * this.speed
-            this.last_dir *= -1
-            if (this.original) {
-                if (Math.random() < 0.3 && this.split_cooldown < 0) {
-                    let shot = new YellowShot(
-                        this.x_pos, this.y_pos, this.width, this.height, this.color, this.shooter,
-                            Math.floor(this.life), false)
-                    shot.speed = this.speed
-                    shot.vx = Math.cos(angle_in_rad - rand) * this.speed
-                    shot.vy = Math.sin(angle_in_rad - rand) * this.speed
-                    shot.bolt_pivot = this.bolt_pivot
-                    this.shooter.shots.push(shot)
-                    this.split_cooldown = 35
-                }
-            }
-        }
-        this.x_pos += this.vx
-        this.y_pos += this.vy
-        this.split_cooldown -= 1
-    }
-}
-
 class BlueShot extends StarShot {
-    constructor(x_pos, y_pos, width, height, color, shooter) {
-        super(x_pos, y_pos, width, height, color, shooter)
+    constructor(x_pos, y_pos, color, shooter) {
+        super(x_pos, y_pos, color, shooter)
         this.ct = 0
-        this.ice_trail = []
+        this.trail = []
     }
     update() {
         this.ct += 1
-        if (this.ice_trail.length > 0) {
-            for (let i = 0; i < this.ice_trail.length; i++) {
-                this.ice_trail[i].life -= 1
-                if (this.ice_trail[i].life === 0) {
-                    this.ice_trail.splice(i, 1)
-                } else if (this.ice_trail[i].life < 10) {
-                    this.ice_trail[i].color = 'deepskyblue'
-                } else if (this.ice_trail[i].life < 20) {
-                    this.ice_trail[i].color = 'dodgerblue'
+        if (this.trail.length > 0) {
+            for (let i = 0; i < this.trail.length; i++) {
+                this.trail[i].life -= 1
+                if (this.trail[i].life === 0) {
+                    this.trail.splice(i, 1)
+                } else if (this.trail[i].life < 10) {
+                    this.trail[i].color = 'deepskyblue'
+                } else if (this.trail[i].life < 20) {
+                    this.trail[i].color = 'dodgerblue'
                 } else {
-                    this.ice_trail[i].color = 'blue'
+                    this.trail[i].color = 'blue'
                 }
             }
         }
         if (this.ct % 5 === 0) {
-            this.ice_trail.push(new Rectangle(this.x_pos, this.y_pos, this.width, this.height, this.color))
-            this.ice_trail[this.ice_trail.length-1].life = 25
+            this.trail.push(new Rectangle(this.x_pos, this.y_pos, this.width, this.height, this.color))
+            this.trail[this.trail.length-1].life = 25
         }
         this.x_pos += this.vx
         this.y_pos += this.vy
     }
 }
 
-function checkPurpleShot(shot, index, ground_y, portals, player, enemies) {
+class YellowShot extends StarShot {
+    constructor(x_pos, y_pos, color, shooter, life=240, bolts=false, interval_ct=0) {
+        super(x_pos, y_pos, color, shooter, life)
+        this.interval_ct = interval_ct
+        this.split_ct = 0
+        this.trail_ct = 0
+        this.trail = []
+        if (bolts) {
+            this.bolts = bolts
+        } else {
+            this.bolts = {"intervals": [], "angles": [], "splits": []}
+            let max_splits = 3
+            let change_dir = Math.random() < 0.5 ? -1 : 1
+            for (let i=220; i>0; i--) {
+                if (Math.random() < 0.2) {
+                    let rand = random(0.25, 0.40) * change_dir
+                    this.bolts.intervals.push(i)
+                    this.bolts.angles.push(rand)
+                    if (this.bolts.splits.length < max_splits && Math.random() < 0.5) {
+                        this.bolts.splits.push(i)
+                    }
+                    i -= 20
+                    change_dir *= -1
+                }
+            }
+        }
+    }
+    update() {
+        if (this.bolts.intervals[this.interval_ct] === this.life) {
+            let angle_in_rad = Math.atan2(this.vy, this.vx)
+            let rand = this.bolts.angles[this.interval_ct]
+            this.vx = Math.cos(angle_in_rad + rand) * this.speed
+            this.vy = Math.sin(angle_in_rad + rand) * this.speed
+            if (this.bolts.splits[this.split_ct] === this.life) {
+                let shot = new YellowShot(
+                    this.x_pos, this.y_pos, "yellow", this.shooter, this.life - 1, this.bolts, this.interval_ct+1)
+                shot.speed = this.speed
+                shot.vx = Math.cos(angle_in_rad - rand) * this.speed
+                shot.vy = Math.sin(angle_in_rad - rand) * this.speed
+                this.shooter.shots.push(shot)
+                this.split_ct += 1
+            }
+            this.trail_ct = 0
+            this.interval_ct += 1
+        }
+        this.x_pos += this.vx
+        this.y_pos += this.vy
+        if (this.trail_ct > -1) {
+            this.trail_ct += 1
+            if (this.trail_ct === 12) {
+                this.trail = []
+                this.trail_ct = -1
+            } else if (this.trail_ct % 3 === 0) {
+                this.trail.push(new Rectangle(this.x_pos, this.y_pos, this.width, this.height, "yellow"))
+            }
+        }
+    }
+}
+
+function checkPurpleShot(shot, index, ground, portals, player, enemies) {
     ///// BOUNCE OFF BOUNDARIES /////
     if (shot.color === 'darkorchid') {
         if (shot.x_pos > this.width - this.star_size) {
@@ -106,33 +128,35 @@ function checkPurpleShot(shot, index, ground_y, portals, player, enemies) {
         } else if (shot.y_pos < 0) {
             shot.vy *= -1
             shot.y_pos += shot.vy
-        } else if (shot.y_pos + shot.height > ground_y) {
+        } else if (shot.y_pos + shot.height > ground.y_pos) {
             shot.vy *= -1
-            shot.y_pos = ground_y - shot.height + shot.vy
+            shot.y_pos = ground.y_pos - shot.height + shot.vy
         }
         ///// COLLISION WITH PORTALS = CHANGE SHOT TYPE /////
         for (let j = 0; j < portals.length; j++) {
             if (portals[j].checkCollideRec(shot)) {
                 let new_shot = new color_data[portals[j].color].shot(
-                    shot.x_pos, shot.y_pos, shot.width, shot.height, portals[j].color, shot.shooter)
+                    shot.x_pos, shot.y_pos, portals[j].color, shot.shooter)
                 let shot_vel = getShotVelocities(
                     shot.vx, shot.vy, 0, 0, color_data[portals[j].color].shot_speed)
                 new_shot.vx = shot_vel.vx
                 new_shot.vy = shot_vel.vy
                 ///// SPECIAL CASES - RED & ORANGE /////
-                if (this.portals[j].color === 'red') {
+                if (portals[j].color === 'red') {
                     new_shot = addRedTarget(new_shot.x_pos, new_shot.y_pos, new_shot, player, enemies, true)
                 } else if (portals[j].color === 'orange') {
-                    this.addOrangeBuck(shot.shooter, new_shot)
+                    this.addOrangeBuck(new_shot)
                 }
                 shot.shooter.shots.push(new_shot)
                 shot.shooter.shots.splice(index, 1)
                 break
             }
         }
-    } else if (shot.y_pos + this.star_size > this.height - this.ground_height) {
-        shot.y_pos = this.height + this.star_size + this.ground_height
-        shot.ground_timer = 30
+    } else if (shot.bottom() >= ground.y_pos) {
+        shot.y_pos = ground.y_pos - shot.height
+        shot.ground_timer = 14
+    } else if (shot.x_pos < 0 || shot.x_pos > ground.width || shot.y_pos < 0) {
+        return true
     }
 }
 
@@ -144,7 +168,7 @@ function addOrangeBuck(shot) {
         let rand = (i === 0) ? random(0.1, 0.15) : random(-0.15, -0.1)
         let mini_v = {vx: Math.cos(angle_in_rad + rand),
                       vy: Math.sin(angle_in_rad + rand)}
-        let mini_shot = new StarShot(shot.x_pos, shot.y_pos, shot.width, shot.height, 'orange', shot.shooter, 180)
+        let mini_shot = new StarShot(shot.x_pos, shot.y_pos, 'orange', shot.shooter, 180)
         ///// WEAKER MINI-SHOTS THAN MAIN SHOT /////
         rand = random(2.5, 3)
         mini_shot.vx = mini_v.vx * rand
@@ -168,31 +192,9 @@ function addRedTarget(x_pos, y_pos, shot, player, enemies, portal=false) {
             x_pos = shot.shooter.cx()
             y_pos = shot.shooter.cy()
         }
-        shot = new StarShot(x_pos, y_pos, shot.width, shot.height, 'red', shot.shooter)
+        shot = new StarShot(x_pos, y_pos, 'red', shot.shooter)
         shot.vx = save_vx
         shot.vy = save_vy
     }
     return shot
-}
-
-function checkExtraDraw(shot) {
-    if (shot.bolt_pivot) {
-        if (shot.bolt_pivot.life > 0) {
-            this.world_ctx.lineWidth = 3
-            this.world_ctx.beginPath()
-            this.world_ctx.moveTo(shot.bolt_pivot.x_pos, shot.bolt_pivot.y_pos)
-            this.world_ctx.lineTo(shot.cx(), shot.cy())
-            let grd = this.world_ctx.createLinearGradient(
-                shot.bolt_pivot.x_pos, shot.bolt_pivot.y_pos, shot.x_pos, shot.y_pos)
-            grd.addColorStop("0", "rgba(0,0,0,0)")
-            grd.addColorStop("1", shot.color)
-            this.world_ctx.strokeStyle = grd
-            this.world_ctx.stroke()
-            shot.bolt_pivot.life -= 1
-        }
-    } else if (shot.ice_trail) {
-        for (let j=0; j<shot.ice_trail.length; j++) {
-            shot.ice_trail[j].draw(this.world_ctx)
-        }
-    }
 }
