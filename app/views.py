@@ -1,3 +1,5 @@
+
+
 from django.shortcuts import render, get_object_or_404, redirect
 from .utils import get_game_or_error
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse

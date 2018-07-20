@@ -22,6 +22,7 @@ redis_host = os.environ.get('REDIS_HOST', 'localhost')
 
 # Channel layer definitions
 # http://channels.readthedocs.io/en/latest/topics/channel_layers.html
+
 CHANNEL_LAYERS = {
     "default": {
         # This example app uses the Redis channel layer implementation channels_redis
@@ -30,6 +31,16 @@ CHANNEL_LAYERS = {
             "hosts": [(redis_host, 6379)],
         },
     },
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
 }
 
 ASGI_APPLICATION = 'StarJumper.routing.application'
@@ -135,6 +146,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+print(BASE_DIR)
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]

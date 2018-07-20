@@ -1,32 +1,10 @@
 
-function random(lower, upper) {
-    return lower + Math.random()*(upper-lower)
-}
+// -------------------------------------OTHER!--------------------------------------------
 
-function getShotVelocities(x_destination, y_destination, x_origin, y_origin, speed) {
-    let dx = x_destination - x_origin
-    let dy = y_destination - y_origin
-    let return_vx = speed * dx / (Math.abs(dx) + Math.abs(dy))
-    let return_vy = speed * dy / (Math.abs(dx) + Math.abs(dy))
-    return {vx: return_vx, vy: return_vy}
-}
 
-function getClosestTarget(x, y, enemies) {
-    let closest_enemy
-    let smallest_separation2 = 999999
-    for (let i=0; i<enemies.length; i++) {
-        if (!enemies[i].dead) {
-            let change_in_x = x - enemies[i].x_pos + enemies[i].width / 2
-            let change_in_y = y - enemies[i].y_pos + enemies[i].height / 2
-            let separation2 = change_in_x * change_in_x + change_in_y * change_in_y
-            if (separation2 < smallest_separation2) {
-                smallest_separation2 = separation2
-                closest_enemy = enemies[i]
-            }
-        }
-    }
-    return closest_enemy
-}
+// ---------------------------------------------------------------------------------------
+// -------------------------------------START UP------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 class KeyTracker {
     constructor() {
@@ -44,6 +22,10 @@ class KeyTracker {
         return this.keys.indexOf(key) > -1
     }
 }
+
+// ---------------------------------------------------------------------------------------
+// -------------------------------------SHAPES--------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 class Rectangle {
     constructor(x, y, width, height, color) {
@@ -114,10 +96,10 @@ class Portal {
         world_ctx.fillStyle = grd
         world_ctx.fill()
     }
-    update(rad_multi) {
+    update(rad_multi, interval) {
         this.rad = 10 + rad_multi * 20
-        this.x_pos += this.vx
-        this.y_pos += this.vy
+        this.x_pos += this.vx * interval
+        this.y_pos += this.vy * interval
     }
     checkCollideRec(rec) {
         let dx = this.x_pos - (rec.x_pos + rec.width / 2)
@@ -192,19 +174,9 @@ class Portal {
     }
 }
 
-class HealthStar extends Rectangle {
-    constructor(x_pos, y_pos, width, height, color) {
-        super(x_pos, y_pos, width, height, color);
-        this.setRandomVelocities()
-        this.last_teleport = {}
-    }
-    setRandomVelocities() {
-        let rand_vx = random(0.5, 1) * (Math.random < 0.5 ? -1 : 1)
-        let rand_vy = random(0.5, 1) * (Math.random < 0.5 ? -1 : 1)
-        this.vx = rand_vx
-        this.vy = rand_vy
-    }
-}
+// ---------------------------------------------------------------------------------------
+// ---------------------------------SHOTS & COLLISION-------------------------------------
+// ---------------------------------------------------------------------------------------
 
 function checkCTX(rec, cnv_width, ctx_data, trans_x) {
     if (rec.width + rec.height < 20) {
@@ -269,17 +241,68 @@ function getCTXColor(r, g, b) {                 // IF THE SWORD HITS A PLAYER OR
     }
 }
 
-class Image {
-    constructor(path, x, y) {
-        this.element = document.createElement('img')
-        this.element.src = path
-        this.x_pos = x
-        this.y_pos = y
+function getShotVelocities(x_destination, y_destination, x_origin, y_origin, speed) {
+    let dx = x_destination - x_origin
+    let dy = y_destination - y_origin
+    let return_vx = speed * dx / (Math.abs(dx) + Math.abs(dy))
+    let return_vy = speed * dy / (Math.abs(dx) + Math.abs(dy))
+    return {vx: return_vx, vy: return_vy}
+}
+
+function getClosestTarget(x, y, enemies) {
+    let closest_enemy
+    let smallest_separation2 = 999999
+    for (let i=0; i<enemies.length; i++) {
+        if (!enemies[i].dead) {
+            let change_in_x = x - enemies[i].x_pos + enemies[i].width / 2
+            let change_in_y = y - enemies[i].y_pos + enemies[i].height / 2
+            let separation2 = change_in_x * change_in_x + change_in_y * change_in_y
+            if (separation2 < smallest_separation2) {
+                smallest_separation2 = separation2
+                closest_enemy = enemies[i]
+            }
+        }
     }
-    draw(world_ctx) {
-        world_ctx.drawImage(this.element, this.x_pos, this.y)
+    return closest_enemy
+}
+
+// ---------------------------------------------------------------------------------------
+// -------------------------------------RANDOM--------------------------------------------
+// ---------------------------------------------------------------------------------------
+
+function random(lower, upper) {
+    return lower + Math.random()*(upper-lower)
+}
+
+class HealthStar extends Rectangle {
+    constructor(x_pos, y_pos, width, height, color) {
+        super(x_pos, y_pos, width, height, color);
+        this.setRandomVelocities()
+        this.last_teleport = {}
+    }
+    setRandomVelocities() {
+        let rand_vx = random(0.5, 1) * (Math.random < 0.5 ? -1 : 1)
+        let rand_vy = random(0.5, 1) * (Math.random < 0.5 ? -1 : 1)
+        this.vx = rand_vx
+        this.vy = rand_vy
     }
 }
+
+// ---------------------------------------------------------------------------------------
+// -----------------------------------NOT IN USE------------------------------------------
+// ---------------------------------------------------------------------------------------
+
+// class Image {
+//     constructor(path, x, y) {
+//         this.element = document.createElement('img')
+//         this.element.src = path
+//         this.x_pos = x
+//         this.y_pos = y
+//     }
+//     draw(world_ctx) {
+//         world_ctx.drawImage(this.element, this.x_pos, this.y)
+//     }
+// }
 
 // class Sound {
 //     constructor(src) {

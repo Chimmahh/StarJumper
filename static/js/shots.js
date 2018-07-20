@@ -198,3 +198,4 @@ function addRedTarget(x_pos, y_pos, shot, player, enemies, portal=false) {
     }
     return shot
 }
+
