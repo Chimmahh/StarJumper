@@ -122,6 +122,7 @@ class StarJumper extends Rectangle {
                 health_star.y_pos = random(100, world_height - 100)
                 health_star.setRandomVelocities()
                 this.star_cooldown = 10
+                this.action.type = ''
                 if (world.play_mode === 'coop') SendKeyDown('ArrowDown')
             }
         ///// IF YOU LAND ON THE HEALTH STAR /////
@@ -157,6 +158,7 @@ class StarJumper extends Rectangle {
                         this.star_cooldown = 10
                         platforms.splice(i, 1)
                         if (world.play_mode === 'coop') SendKeyDown('ArrowDown')
+                        this.action.type = ''
                     }
                     break
                 ///// CHECK HEAD BUMP /////

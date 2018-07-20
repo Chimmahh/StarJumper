@@ -296,7 +296,7 @@
                             shield:              3.0  },
         }
 
-        let play_mode = 'survival'
+        let play_mode = 'coop'
         let world = new World(world_cnv, sword_cnv, play_mode)
         
         let fpsInterval, recInterval, startTime, global_now, key_tracker
@@ -304,8 +304,8 @@
         let restart = 0
         let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
         let host_ct = 0
-        let rps = 5
-        let fps = 60
+        let rps = 8
+        let fps = 30
 
         let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws"
         let ws_path = ws_scheme + '://' + window.location.host + "/game/ether/"
@@ -358,7 +358,6 @@
             }))
         }
 
-
         function Reconcile() {
             socket.send(JSON.stringify({
                 "command": "reconcile",
@@ -386,7 +385,7 @@
                 "command": "keyup",
                 "game": {{ game.id }},
                 "client_now": global_now,
-                "key": evt.key,
+                "key": key,
             }))
         }
         function ReconcileHost() {
@@ -399,7 +398,7 @@
             }))
         }
         function SendShot(shot) {
-            this.socket.send(JSON.stringify({
+            socket.send(JSON.stringify({
                 "command": "shot",
                 "game": {{ game.id }},
                 "client_now": global_now,
@@ -413,7 +412,7 @@
             }))
         }
         function SendPlatform(x_pos, y_pos) {
-            this.socket.send(JSON.stringify({
+            socket.send(JSON.stringify({
                 "command": "place",
                 "game": {{ game.id }},
                 "placement": {
@@ -423,7 +422,7 @@
             }))
         }
         function Leave() {
-            this.socket.send(JSON.stringify({
+            socket.send(JSON.stringify({
                 "command": "leave",
                 "game": {{ game.id }}
             }))
@@ -462,9 +461,11 @@
             }
             elapsed_reconcile = now - then_reconcile
             elapsed = now - then
-            world.update(elapsed/fps)
-            world.draw()
-            then = now
+            if (elapsed > fpsInterval) {
+                then = now - (elapsed % fpsInterval)
+                world.update()
+                world.draw()
+            }
             if (play_mode === 'coop') {
                 if (elapsed_reconcile > recInterval) {
                     then_reconcile = now - (elapsed_reconcile % recInterval)
@@ -488,18 +489,18 @@
                         if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
                             world.player.action.type = 'down'
                         } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
-                            socket.sendKeyDown(evt.key)
+                            SendKeyDown(evt.key)
                         }
                     }
                 })
 
                 document.addEventListener('keyup', (evt) => {
                     world.player.key_tracker.keyUp(evt.key)
-                    socket.sendKeyUp(evt.key)
+                    SendKeyUp(evt.key)
                 })
 
                 disconnect_bt.onclick = () => {
-                    socket.leave()
+                    Leave()
                     disconnect_bt.style.display = 'None'
                 }
             } else {

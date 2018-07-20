@@ -185,7 +185,7 @@ class YellowEnemy extends Enemy {
     constructor(x_pos, y_pos, width, height, color, target) {
         super(x_pos, y_pos, width, height, color, target)
         this.land_ct = 0
-        this.accel_y = 0.5
+        this.accel_y = 0.3
     }
     update(ground_y) {
         this.land_ct -= 1

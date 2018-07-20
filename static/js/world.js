@@ -122,10 +122,12 @@ class World {
             y = random(0, this.height * 0.8)
             x = random(100, this.width - 100)
             this.health_star = new HealthStar(x, y, this.star_size, this.star_size, 'deeppink')
+            this.health_star.vx = 1
+            this.health_star.vy = 1
         }
     }
 
-    update(interval) {
+    update() {
         if (this.player.health === 0) this.play = false
         if (this.player.host || this.play_mode === 'survival') {
             if (this.portals.length === 0) this.host_contructor()
@@ -156,24 +158,24 @@ class World {
                 total_velocity += Math.abs(this.portals[i].vx) + Math.abs(this.portals[i].vy)
                 ///// MOVE PORTAL, SIZE ACCORDING TO PORTAL PAIR /////
                 let portal_pair_position = Math.abs(this.portals[i].portal_pair.x_pos - this.health_star.x_pos) / this.width
-                if (portal_pair_position > 0) this.portals[i].update(portal_pair_position, interval)
+                if (portal_pair_position > 0) this.portals[i].update(portal_pair_position)
                 ///// BOUNCE PORTALS OFF SIDES & GROUND //////
                 if (this.portals[i].x_pos + this.portals[i].rad > this.width) {
                     this.portals[i].setRight(this.width)
                     this.portals[i].vx *= -1
-                    this.portals[i].x_pos += this.portals[i].vx * interval
+                    this.portals[i].x_pos += this.portals[i].vx
                 } else if (this.portals[i].x_pos - this.portals[i].rad < 0) {
                     this.portals[i].setLeft(0)
                     this.portals[i].vx *= -1
-                    this.portals[i].x_pos += this.portals[i].vx * interval
+                    this.portals[i].x_pos += this.portals[i].vx
                 } else if (this.portals[i].y_pos + this.portals[i].rad > this.height - this.ground_height) {
                     this.portals[i].setBottom(this.height - this.ground_height)
                     this.portals[i].vy *= -1
-                    this.portals[i].y_pos += this.portals[i].vy * interval
+                    this.portals[i].y_pos += this.portals[i].vy
                 } else if (this.portals[i].y_pos - this.portals[i].rad < 0) {
                     this.portals[i].setTop(0)
                     this.portals[i].vy *= -1
-                    this.portals[i].y_pos += this.portals[i].vy * interval
+                    this.portals[i].y_pos += this.portals[i].vy
                 }
                 ///// CHECK TO SEE IF PORTAL HIT ANOTHER PORTAL //////
                 for (let j=i+1; j<this.portals.length; j++) {
@@ -211,10 +213,14 @@ class World {
                 this.portals[i].vib_count -= 1
             }
             this.total_velocity = total_velocity
-            ///// BOUNCE POINT STAR //////
+            ///// BOUNCE HEALTH STAR //////
+            this.health_star.x_pos += this.health_star.vx
+            this.health_star.y_pos += this.health_star.vy
             let is_ob_right = this.health_star.x_pos + this.health_star.width > this.width
             let is_ob_left = this.health_star.x_pos < 0
-            if (is_ob_right || is_ob_left) this.health_star.vx *= -1
+            if (is_ob_left) this.health_star.x_pos = this.width - this.health_star.width
+            if (is_ob_right) this.health_star.x_pos = 0
+            // if (is_ob_right || is_ob_left) this.health_star.vx *= -1
             let is_ob_top = this.health_star.y_pos > this.height - this.ground.height - this.star_size
             let is_ob_bottom = this.health_star.y_pos < 0
             if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1

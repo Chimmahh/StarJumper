@@ -96,10 +96,10 @@ class Portal {
         world_ctx.fillStyle = grd
         world_ctx.fill()
     }
-    update(rad_multi, interval) {
+    update(rad_multi) {
         this.rad = 10 + rad_multi * 20
-        this.x_pos += this.vx * interval
-        this.y_pos += this.vy * interval
+        this.x_pos += this.vx
+        this.y_pos += this.vy
     }
     checkCollideRec(rec) {
         let dx = this.x_pos - (rec.x_pos + rec.width / 2)

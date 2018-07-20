@@ -315,11 +315,14 @@
                 then = now
                 then_reconcile = now
             }
+
             elapsed_reconcile = now - then_reconcile
             elapsed = now - then
-            world.update(elapsed/fps)
-            world.draw()
-            then = now
+            if (elapsed > fpsInterval) {
+                then = now - (elapsed % fpsInterval)
+                world.update()
+                world.draw()
+            }
             if (play_mode === 'coop') {
                 if (elapsed_reconcile > recInterval) {
                     then_reconcile = now - (elapsed_reconcile % recInterval)
