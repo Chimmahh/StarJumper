@@ -8,6 +8,8 @@ from django.core.cache.backends.base import DEFAULT_TIMEOUT
 from .models import GamePlayer
 
 CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
+# CACHE_TTL = 100000
+
 
 class Player(AsyncJsonWebsocketConsumer):
 
@@ -19,6 +21,8 @@ class Player(AsyncJsonWebsocketConsumer):
         self.game = set()
 
     async def receive_json(self, content):
+        game = await get_game_or_error(content["game"], self.scope["user"])
+
         command = content.get("command", None)
         if command == "join":
             await self.join_game(content)
@@ -31,12 +35,13 @@ class Player(AsyncJsonWebsocketConsumer):
         elif command == "place":
             await self.place_group(content)
         elif command == "reconcile":
+            msg_ct = cache.get("msg_ct")
+            cache.set("msg_ct", msg_ct + 1, timeout=CACHE_TTL)
             await self.reconcile_group(content)
         elif command == "reconcile_host":
             await self.reconcile_host_group(content)
         elif command == "shot":
             await self.shot_group(content)
-
 
     # async def disconnect(self, code):
     #     print(code)
@@ -59,6 +64,8 @@ class Player(AsyncJsonWebsocketConsumer):
                     "type": "host",
                 }
             )
+        cache.set("msg_ct", 0, timeout=CACHE_TTL)
+        cache.set("thru_ct", 0, timeout=CACHE_TTL)
         cache.set(game.group_name + "." + self.scope["user"].username + ".client_now", 0, timeout=CACHE_TTL)
 
     async def leave_game(self, content):
@@ -148,12 +155,17 @@ class Player(AsyncJsonWebsocketConsumer):
                     "type": "reconcile.client",
                     "username": self.scope["user"].username,
                     "current": content["current"],
+                    "game": game.group_name,
                 }
             )
             cache.set(game.group_name + "." + self.scope["user"].username + ".client_now", content["client_now"], timeout=CACHE_TTL)
 
     async def reconcile_client(self, event):
         if event["username"] != self.scope["user"].username:
+            thru_ct = cache.get("thru_ct")
+            cache.set("thru_ct", thru_ct + 1, timeout=CACHE_TTL)
+            msg_ct = cache.get("msg_ct")
+            print(msg_ct, thru_ct, msg_ct - thru_ct)
             await self.send_json(
                 {
                     "type": "reconcile",

@@ -1,6 +1,6 @@
 
 class World {
-    constructor(world_cnv, sword_cnv, play_mode, socket=false) {
+    constructor(world_cnv, sword_cnv, play_mode) {
         this.play = true
         this.play_mode = play_mode
         this.difficulty = 5
@@ -53,8 +53,7 @@ class World {
                 } else if (this.player.color === 'orange') {
                     addOrangeBuck(shot)
                 }
-                // console.log(this.shots[i])
-                if (socket) SendShot(shot)
+                if (this.play_mode === 'coop') SendShot(shot)
                 this.player.shots.push(shot)
             }
         }

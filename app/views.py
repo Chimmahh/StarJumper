@@ -21,7 +21,7 @@ def login_view(request):
         login(request, user)
         if 'next' in request.POST and request.POST['next'] != '':
             return redirect(request.POST['next'])
-        return redirect(reverse('app:home'))
+        return redirect(reverse('app:lounge'))
     return redirect(reverse('app:login_register'))
 
 def logout_view(request):
@@ -34,15 +34,15 @@ def register(request):
     password = request.POST['password']
     user = User.objects.create_user(username, email, password)
     login(request, user)
-    return redirect(reverse('app:home'))
+    return redirect(reverse('app:lounge'))
 
-def home(request):
+def lounge(request):
     games = Game.objects.all()
-    return render(request, 'home.html', {'games': games})
+    return render(request, 'lounge.html', {'games': games})
 
-def play(request, game_id):
+def single_player(request):
+    return render(request, "single_player.html")
+
+def multi_player(request, game_id):
     game = get_object_or_404(Game, pk=game_id)
-    return render(request, "play.html", {"game": game})
-
-# def portal_update(request, game_id):
-
+    return render(request, "multi_player.html", {"game": game})

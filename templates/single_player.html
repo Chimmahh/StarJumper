@@ -132,7 +132,6 @@
 </head>
 
 <body>
-    {{ user.username }}
     <canvas id="world_cnv" width="1200" height="500"></canvas>
     <canvas id="sword_cnv" width="1200" height="500"></canvas>
     <!--<canvas id="player_shots_cnv" width="1200" height="500"></canvas>-->
@@ -254,7 +253,6 @@
     <script src="{% static 'js/star_jumper.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/enemy.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/world.js' %}"  type="text/javascript"></script>
-    <script src="{% static "js/reconnecting-websocket.min.js" %}" type="text/javascript"></script>
 
     <script>
         let color_data = {
@@ -296,20 +294,16 @@
                             shield:              3.0  },
         }
 
-        let fpsInterval, recInterval, startTime, now, socket, world, key_tracker
-        let then, elapsed, then_reconcile, elapsed_reconcile
+        let world = new World(world_cnv, sword_cnv, 'survival')
+        let fpsInterval, global_now, then, elapsed
+        let fps = 60
         let restart = 0
         let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
-        let host_ct = 0
 
-        let rps = 3
-        let fps = 60
-        let rtt = [20]
-        let play_mode = 'coop'
-
-        function animationLoop() {
-            if (world.play) window.requestAnimationFrame(animationLoop)
-            now = Date.now()
+        function Animate(now) {
+            if (world.play) window.requestAnimationFrame(Animate)
+            global_now = now
+            if (!then) then = now
             elapsed_reconcile = now - then_reconcile
             elapsed = now - then
             if (elapsed > fpsInterval) {
@@ -317,212 +311,26 @@
                 world.update()
                 world.draw()
             }
-            if (play_mode === 'coop') {
-                if (elapsed_reconcile > recInterval) {
-                    then_reconcile = now - (elapsed_reconcile % recInterval)
-                    socket.send(JSON.stringify({
-                        "command": "reconcile",
-                        "game": {{ game.id }},
-                        "client_now": now,
-                        "current": {
-                            "x_pos": world.player.x_pos,
-                            "y_pos": world.player.y_pos,
-                            "vy": world.player.vy,
-                            "color": world.player.color,
-                        }
-                    }))
-                    host_ct += 1
-                }
-                if (world.player.host) {
-                    if (host_ct === 10 && elapsed_reconcile > recInterval/2) {   // STAGGER HOST RECONCILE SEND
-                        socket.send(JSON.stringify({
-                            "command": "reconcile_host",
-                            "game": {{ game.id }},
-                            "portals": world.portalXYVs(),
-                            "stars": world.starXYs(),
-                            "health": world.health_star.dictXYV(),
-                        }))
-                        host_ct = 0
-                    }
-                }
-            }
-        }
-
-        function SendShot(shot) {
-            socket.send(JSON.stringify({
-                "command": "shot",
-                "game": {{ game.id }},
-                "client_now": now,
-                "shot": {
-                    "x_pos": shot.x_pos,
-                    "y_pos": shot.y_pos,
-                    "vx": shot.vx,
-                    "vy": shot.vy,
-                    "color": shot.color,
-                }
-            }))
-        }
-
-        function ReconstructShot(guy, time_diff, shot) {
-            let new_x = shot.x_pos
-            let new_y = shot.y_pos
-            let new_vx = shot.vx
-            let new_vy = shot.vy
-            let new_speed = color_data[shot.color].shot_speed
-            for (let i=0; i<time_diff; i++) {
-                new_x += shot.vx
-                new_y += shot.vy
-                new_vx *= .994
-                new_vy *= .994
-                new_speed *= .994
-            }
-            let new_shot = new color_data[shot.color].shot(new_x, new_y, shot.color, guy)
-            new_shot.vx = new_vx
-            new_shot.vy = new_vy
-            new_shot.speed = new_speed
-            guy.shots.push(new_shot)
-        }
-
-        function ReconstructSword(guy, time_diff, poly) {
-            let new_x = shot.x_pos
-            let new_y = shot.y_pos
-            let new_vx = shot.vx
-            let new_vy = shot.vy
-            let new_speed = color_data[shot.color].shot_speed
-            for (let i=0; i<time_diff; i++) {
-                new_x += shot.vx
-                new_y += shot.vy
-                new_vx *= .994
-                new_vy *= .994
-                new_speed *= .994
-            }
-            let new_shot = new color_data[shot.color].shot(new_x, new_y, shot.color, guy)
-            new_shot.vx = new_vx
-            new_shot.vy = new_vy
-            new_shot.speed = new_speed
-            guy.shots.push(new_shot)
-        }
-
-        function SendPlatform(x_pos, y_pos) {
-            socket.send(JSON.stringify({
-                "command": "place",
-                "game": {{ game.id }},
-                "placement": {
-                    "x_pos": x_pos,
-                    "y_pos": y_pos,
-                }
-            }))
         }
 
         function StartLoop() {
-            if (play_mode === 'coop') {
-                let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws"
-                let ws_path = ws_scheme + '://' + window.location.host + "/game/ether/"
-                socket = new ReconnectingWebSocket(ws_path)
-                socket.onopen = function () {
-                    console.log("Connected to game socket")
-                    socket.send(JSON.stringify({
-                        "command": "join",
-                        "game": {{ game.id }}
-                    }))
+            world = new World(world_cnv, sword_cnv, 'survival')
+            document.addEventListener('keydown', (evt) => {
+                if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
+                    world.player.action.type = 'down'
+                } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
+                    world.player.key_tracker.keyDown(evt.key)
                 }
+            })
 
-                socket.onmessage = function (message) {
-                    let data = JSON.parse(message.data)
-                    let guy
-                    if (data.username) {
-                        if (!world.pvp_data.hasOwnProperty(data.username)) {
-                            if (data.type === 'reconcile') {
-                                world.pvp_data[data.username] = new StarJumper(
-                                    data.current.x_pos, data.current.y_pos, data.current.color, new KeyTracker())
-                            }
-                        } else {
-                            guy = world.pvp_data[data.username]
-                            if (data.type === 'reconcile') {
-                                guy.x_pos = data.current.x_pos
-                                guy.y_pos = data.current.y_pos
-                                guy.vy = data.current.vy
-                                guy.color = data.current.color
-                            } else if (data.type === 'keydown') {
-                                guy.key_tracker.keyDown(data.key)
-                            } else if (data.type === 'keyup') {
-                                guy.key_tracker.keyUp(data.key)
-                            } else if (data.type === 'place') {
-                                guy.action.type = 'place'
-                                guy.action.data = {
-                                    x_pos: data.placement.x_pos,
-                                    y_pos: data.placement.y_pos
-                                }
-                            } else if (data.type === 'shot') {
-                                ReconstructShot(guy, (now - data.time) / fps, data.shot)
-                            } else if (data.type === 'sword') {
-                                guy.sword_trail.push(data.sword_trail)
-                            }
-                        }
-                    } else if (data.type === 'host') {
-                        world.player.host = true
-                    } else if (data.type === 'reconcile_host') {
-                        world.host_update = data.host_update
-                    }
-                }
-
-                document.addEventListener('keydown', (evt) => {
-                    if (!world.player.key_tracker.isKeyDown(evt.key)) {
-                        world.player.key_tracker.keyDown(evt.key)
-                        if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
-                            world.player.action.type = 'place'
-                        } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
-                            socket.send(JSON.stringify({
-                                "command": "keydown",
-                                "game": {{ game.id }},
-                                "client_now": now,
-                                "key": evt.key,
-                            }))
-                        }
-                    }
-                })
-
-                document.addEventListener('keyup', (evt) => {
-                    world.player.key_tracker.keyUp(evt.key)
-                    socket.send(JSON.stringify({
-                        "command": "keyup",
-                        "game": {{ game.id }},
-                        "client_now": now,
-                        "key": evt.key,
-                    }))
-                })
-
-                disconnect_bt.onclick = () => {
-                    socket.send(JSON.stringify({
-                        "command": "leave",
-                        "game": {{ game.id }}
-                    }))
-                    disconnect_bt.display = 'block'
-                }
-                world = new World(world_cnv, sword_cnv, play_mode, socket)
-            } else {
-                world = new World(world_cnv, sword_cnv, play_mode)
-                document.addEventListener('keydown', (evt) => {
-                    if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
-                        world.player.action.type = 'place'
-                    } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
-                        world.player.key_tracker.keyDown(evt.key)
-                    }
-                })
-
-                document.addEventListener('keyup', (evt) => {
-                    world.player.key_tracker.keyUp(evt.key)
-                })
-            }
+            document.addEventListener('keyup', (evt) => {
+                world.player.key_tracker.keyUp(evt.key)
+            })
 
             fpsInterval = 1000 / fps
-            recInterval = 1000 / rps
-            then = Date.now()
-            then_reconcile = Date.now()
-            startTime = then
-            animationLoop()
+            window.requestAnimationFrame(Animate)
         }
-        StartLoop(fps, play_mode)
+        StartLoop(fps, 'survival')
     </script>
 </body>
 </html>
