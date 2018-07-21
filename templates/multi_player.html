@@ -296,25 +296,17 @@
                             shield:              3.0  },
         }
 
-        let play_mode = 'survival'
-        let rps, fps
-        if (play_mode === 'survival') {
-            fps = 60
-        } else if (play_mode === 'coop') {
 
 
-            rps = 10
-            fps = 30
-        }
-
-        let world = new World(world_cnv, sword_cnv, play_mode)
+        let world = new World(world_cnv, sword_cnv, 'coop')
 
         let fpsInterval, recInterval, startTime, global_now, key_tracker
         let then, elapsed, then_reconcile, elapsed_reconcile
-        let restart = 0
+        let rps = 10
+        let fps = 30
         let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
+        let restart = 0
         let host_ct = 0
-
 
         let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws"
         let ws_path = ws_scheme + '://' + window.location.host + "/game/ether/"
@@ -480,58 +472,40 @@
                 world.update()
                 world.draw()
             }
-            if (play_mode === 'coop') {
-                if (elapsed_reconcile > recInterval) {
-                    then_reconcile = now - (elapsed_reconcile % recInterval)
-                    Reconcile()
-                    host_ct += 1
-                }
-                if (world.player.host) {
-                    if (host_ct === 10 && elapsed_reconcile > recInterval/2) {   // STAGGER HOST RECONCILE SEND
-                        ReconcileHost()
-                        host_ct = 0
-                    }
+            if (elapsed_reconcile > recInterval) {
+                then_reconcile = now - (elapsed_reconcile % recInterval)
+                Reconcile()
+                host_ct += 1
+            }
+            if (world.player.host) {
+                if (host_ct === 10 && elapsed_reconcile > recInterval/2) {   // STAGGER HOST RECONCILE SEND
+                    ReconcileHost()
+                    host_ct = 0
                 }
             }
         }
 
         function StartLoop() {
-            if (play_mode === 'coop') {
-                document.addEventListener('keydown', (evt) => {
-                    if (!world.player.key_tracker.isKeyDown(evt.key)) {
-                        world.player.key_tracker.keyDown(evt.key)
-                        if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
-                            world.player.action.type = 'down'
-                        } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
-                            SendKeyDown(evt.key)
-                        }
-                    }
-                })
-
-                document.addEventListener('keyup', (evt) => {
-                    world.player.key_tracker.keyUp(evt.key)
-                    SendKeyUp(evt.key)
-                })
-
-                disconnect_bt.onclick = () => {
-                    Leave()
-                    disconnect_bt.style.display = 'None'
-                }
-            } else {
-                world = new World(world_cnv, sword_cnv, play_mode)
-                document.addEventListener('keydown', (evt) => {
+            document.addEventListener('keydown', (evt) => {
+                if (!world.player.key_tracker.isKeyDown(evt.key)) {
+                    world.player.key_tracker.keyDown(evt.key)
                     if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
                         world.player.action.type = 'down'
                     } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
-                        world.player.key_tracker.keyDown(evt.key)
+                        SendKeyDown(evt.key)
                     }
-                })
+                }
+            })
 
-                document.addEventListener('keyup', (evt) => {
-                    world.player.key_tracker.keyUp(evt.key)
-                })
+            document.addEventListener('keyup', (evt) => {
+                world.player.key_tracker.keyUp(evt.key)
+                SendKeyUp(evt.key)
+            })
+
+            disconnect_bt.onclick = () => {
+                Leave()
+                disconnect_bt.style.display = 'None'
             }
-
             fpsInterval = 1000 / fps
             recInterval = 1000 / rps
             startTime = then

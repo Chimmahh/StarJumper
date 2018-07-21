@@ -217,9 +217,9 @@ class World {
             this.health_star.y_pos += this.health_star.vy
             let is_ob_right = this.health_star.x_pos + this.health_star.width > this.width
             let is_ob_left = this.health_star.x_pos < 0
-            if (is_ob_left) this.health_star.x_pos = this.width - this.health_star.width
-            if (is_ob_right) this.health_star.x_pos = 0
-            // if (is_ob_right || is_ob_left) this.health_star.vx *= -1
+            // if (is_ob_left) this.health_star.x_pos = this.width - this.health_star.width
+            // if (is_ob_right) this.health_star.x_pos = 0
+            if (is_ob_right || is_ob_left) this.health_star.vx *= -1
             let is_ob_top = this.health_star.y_pos > this.height - this.ground.height - this.star_size
             let is_ob_bottom = this.health_star.y_pos < 0
             if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1
@@ -613,7 +613,7 @@ class World {
             let status_bar_width = this.world_cnv.width * 0.5
             let player_position_in_world = this.player.cx() / this.width
             let pp = status_bar_width * player_position_in_world + status_bar_left
-            let health_star_position_in_world = this.health_star.cx() / this.width
+            let health_star_position_in_world = (this.health_star.x_pos - 35) / this.width
             let hp = status_bar_width * health_star_position_in_world + status_bar_left
 
             ///// HEALTH /////

@@ -11,24 +11,37 @@
             background-color: black;
             font-family: 'Press Start 2P', cursive;
         }
+        #canvas_div {
+            width: 1200px;
+            margin: auto;
+        }
         canvas {
             border: 1px solid white;
-            background-size: 2400px 480px;
             position: absolute;
-            top: 30px;
-            left: 30px;
+        }
+        #button_div {
+            width: 280px;
+            margin: 10px auto;
         }
         button {
-            position: absolute;
-            top: 540px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1em;
+            height: 30px;
+            width: 120px;
             border-radius: 4px;
+            background-color: deepskyblue;
             z-index: 10;
+            margin: 4px;
         }
-        #show_modal_bt {
-            left: 30px;
-        }
-        #disconnect_bt {
-            left: 90px;
+        #hide_modal_bt {
+            font-size: 14px;
+            height: 30px;
+            width: 72px;
+            position: absolute;
+            left: 414px;
+            top: 254px;
+            background-color: lime;
+            font-family: 'Press Start 2P', cursive;
         }
         #modal_background {
             display: none; /* Hidden by default */
@@ -122,20 +135,20 @@
         #other_border {
             margin-left: 200%;
         }
-        #instruction_div > button {
-            position: absolute;
-            left: 420px;
-            top: 268px;
-            font-family: 'Press Start 2P', cursive;
-        }
     </style>
 </head>
 
 <body>
-    <canvas id="world_cnv" width="1200" height="500"></canvas>
-    <canvas id="sword_cnv" width="1200" height="500"></canvas>
-    <!--<canvas id="player_shots_cnv" width="1200" height="500"></canvas>-->
-    <!--<canvas id="enemy_attack_cnv" width="1200" height="500"></canvas>-->
+    <div id="button_div">
+        <button id="show_modal_bt">Rules</button>
+        <button id="disconnect_bt">Leave</button>
+    </div>
+    <div id="canvas_div">
+        <canvas id="world_cnv" width="1200" height="500"></canvas>
+        <canvas id="sword_cnv" width="1200" height="500"></canvas>
+        <!--<canvas id="player_shots_cnv" width="1200" height="500"></canvas>-->
+        <!--<canvas id="enemy_attack_cnv" width="1200" height="500"></canvas>-->
+    </div>
     <div id="modal_background"></div>
     <div id="instruction_modal_div">
         <div id="instruction_options_div">
@@ -185,8 +198,7 @@
             <button id="hide_modal_bt">Exit</button>
         </div>
     </div><br>
-    <button id="show_modal_bt">Rules</button>
-    <button id="disconnect_bt">Leave</button>
+
 
     <script>
         let world_cnv = document.querySelector('#world_cnv')
@@ -304,7 +316,6 @@
             if (world.play) window.requestAnimationFrame(Animate)
             global_now = now
             if (!then) then = now
-            elapsed_reconcile = now - then_reconcile
             elapsed = now - then
             if (elapsed > fpsInterval) {
                 then = now - (elapsed % fpsInterval)

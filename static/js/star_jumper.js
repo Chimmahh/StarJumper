@@ -47,6 +47,7 @@ class StarJumper extends Rectangle {
                     this.rgb = new RGBColor(new_color)
                     this.last_teleport = portals[i].portal_pair
                     this.display_shield_ct = 60
+                    this.energy = 100
                     this.x_pos = portals[i].portal_pair.x_pos
                     this.y_pos = portals[i].portal_pair.y_pos
                 }
