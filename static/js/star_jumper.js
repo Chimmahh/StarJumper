@@ -16,7 +16,8 @@ class StarJumper extends Rectangle {
         this.freeze_ct = 0
         this.display_shield_ct = 0
         this.star_cooldown = 10
-        this.score = 0
+        this.score = {}
+        this.victory = false
         this.base_health = 10
         this.health = 10
         this.shield = 2
@@ -110,63 +111,67 @@ class StarJumper extends Rectangle {
             }
         }
         ///// IF RIDING ON HEALTH STAR /////
-        if (this.staa_ridin) {
-            this.on_platform = true
-            this.x_pos = health_star.x_pos - (this.width - health_star.width) / 2
-            this.y_pos = health_star.y_pos - this.height
-            ///// PICK UP HEALTH STAR  /////
-            if (this.action.type === 'down' && this.star_cooldown < 0) {
-                this.staa_ridin = false
-                this.on_platform = false
-                if (this.health < 10) this.health += 1
-                health_star.x_pos = random(100, world_width - 100)
-                health_star.y_pos = random(100, world_height - 100)
-                health_star.setRandomVelocities()
-                this.star_cooldown = 10
-                this.action.type = ''
-                if (world.play_mode === 'coop') SendKeyDown('ArrowDown')
-            }
-        ///// IF YOU LAND ON THE HEALTH STAR /////
-        } else if (this.landed(health_star) && !this.staa_ridin) {
-            this.on_platform = true
-            this.staa_ridin = true
-            this.flip_count = 0
-        ///// IF YOU ARE FLIPPING, UP OR DOWN /////
-        } else if (this.flip_count > 0) {
-            if (this.flip_type === 'up') {
-                this.vy -= 0.06
-            } else {
-                this.vy += 0.5
-            }
-            this.y_pos += this.vy
-            if (this.y_pos + this.height >= platforms[0].y_pos) {
-                this.y_pos = platforms[0].y_pos - this.height
+        if (health_star) {
+            if (this.staa_ridin) {
+                this.on_platform = true
+                this.x_pos = health_star.x_pos - (this.width - health_star.width) / 2
+                this.y_pos = health_star.y_pos - this.height
+                ///// PICK UP HEALTH STAR  /////
+                if (this.action.type === 'down' && this.star_cooldown < 0) {
+                    this.staa_ridin = false
+                    this.on_platform = false
+                    if (this.health < 10) this.health += 1
+                    health_star.x_pos = random(100, world_width - 100)
+                    health_star.y_pos = random(100, world_height - 100)
+                    health_star.setRandomVelocities()
+                    this.star_cooldown = 10
+                    this.action.type = ''
+                    if (world.play_mode === 'multi') SendKeyDown('ArrowDown')
+                }
+            ///// IF YOU LAND ON THE HEALTH STAR /////
+            } else if (this.landed(health_star) && !this.staa_ridin) {
+                this.on_platform = true
+                this.staa_ridin = true
                 this.flip_count = 0
-            } else {
-                this.flip_count -= 1
             }
-        ///// OTHERWISE CHECK NORMAL HITS /////
+        ///// IF YOU ARE FLIPPING, UP OR DOWN /////
         } else {
-            for (let i=0; i<platforms.length; i++) {
-                ///// LANDED ON STAR OR GROUND /////
-                if (this.landed(platforms[i])) {
-                    this.y_pos = platforms[i].top() - this.height
-                    this.vy = 0
-                    this.on_platform = true
-                    ///// DOWN KEY = PICK UP STAR /////
-                    if (this.action.type === 'down' && this.star_cooldown < 0 && i > 0) {
-                        this.grabStar()
-                        this.star_cooldown = 10
-                        platforms.splice(i, 1)
-                        if (world.play_mode === 'coop') SendKeyDown('ArrowDown')
-                        this.action.type = ''
+            if (this.flip_count > 0) {
+                if (this.flip_type === 'up') {
+                    this.vy -= 0.06
+                } else {
+                    this.vy += 0.5
+                }
+                this.y_pos += this.vy
+                if (this.y_pos + this.height >= platforms[0].y_pos) {
+                    this.y_pos = platforms[0].y_pos - this.height
+                    this.flip_count = 0
+                } else {
+                    this.flip_count -= 1
+                }
+            ///// OTHERWISE CHECK NORMAL HITS /////
+            } else {
+                for (let i=0; i<platforms.length; i++) {
+                    ///// LANDED ON STAR OR GROUND /////
+                    if (this.landed(platforms[i])) {
+                        this.y_pos = platforms[i].top() - this.height
+                        this.vy = 0
+                        this.on_platform = true
+                        ///// DOWN KEY = PICK UP STAR /////
+                        if (this.action.type === 'down' && this.star_cooldown < 0 && i > 0) {
+                            this.grabStar()
+                            this.star_cooldown = 10
+                            platforms.splice(i, 1)
+                            if (world.play_mode === 'multi') SendKeyDown('ArrowDown')
+                            this.action.type = ''
+                        }
+                        break
+                    ///// CHECK HEAD BUMP /////
+                    } else if (this.hitHead(platforms[i]) && this.vy < 0 && i > 0 && this.flip_count <= 0) {
+                        this.y_pos = platforms[i].bottom() + 0.001
+                        this.vy = -0.015
+                        break
                     }
-                    break
-                ///// CHECK HEAD BUMP /////
-                } else if (this.hitHead(platforms[i]) && this.vy < 0 && i > 0 && this.flip_count <= 0) {
-                    this.y_pos = platforms[i].bottom() + 0.001
-                    this.vy = -0.015
-                    break
                 }
             }
         }
@@ -218,17 +223,17 @@ class StarJumper extends Rectangle {
                 this.y_pos = platforms[0].y_pos - this.height
             }
             ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
-            if (this.action.type === 'down' && this.star_count > 0) {
+            if (this.action.type === 'down' && this.star_count > 0 && this.star_cooldown < 0) {
                 let new_star_x, new_star_y
                 if (isPlayer) {
-                    new_star_x = this.x_pos + (this.width - health_star.width) / 2
+                    new_star_x = this.x_pos + (this.width - world.star_size) / 2
                     new_star_y = this.bottom()
-                    if (world.play_mode === 'coop') SendPlatform(new_star_x, new_star_y)
+                    if (world.play_mode === 'multi') SendPlatform(new_star_x, new_star_y)
                 } else {
                     new_star_x = this.action.data.x_pos
                     new_star_y = this.action.data.y_pos
                 }
-                let star = new Rectangle(new_star_x, new_star_y, health_star.width, health_star.height, 'white')
+                let star = new Rectangle(new_star_x, new_star_y, world.star_size, world.star_size, 'white')
                 platforms.push(star)
                 this.vy = 0
                 this.star_count -= 1
@@ -275,6 +280,28 @@ class StarJumper extends Rectangle {
             world_ctx.font = 'bold 18px Arial'
             world_ctx.fillText(this.shield, this.x_pos + 5.5, this.y_pos - 10)
         }
+
+        let rot = Math.PI / 2 * 3
+        let outer_rad = 8
+        let inner_rad = 4
+        let step = Math.PI / 5
+        let px = this.cx()
+        let py = this.cy()
+        let x, y
+        world_ctx.beginPath()
+        world_ctx.moveTo(px, py - outer_rad)
+        for (let i = 0; i < 5; i++) {
+            x = px + Math.cos(rot) * outer_rad
+            y = py + Math.sin(rot) * outer_rad
+            world_ctx.lineTo(x, y)
+            rot += step
+            x = px + Math.cos(rot) * inner_rad
+            y = py + Math.sin(rot) * inner_rad
+            world_ctx.lineTo(x, y)
+            rot += step
+        }
+        world_ctx.fillStyle = "rgba(255,20,147," + this.health / this.base_health + ")"
+        world_ctx.fill()
 
         ///// FLIPPING === SWORD SEQUENCE /////
         if (this.flip_count > 0) {

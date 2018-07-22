@@ -1,4 +1,57 @@
 
+class Eye {
+    constructor(x_pos, y_pos, target) {
+        this.x_pos = x_pos
+        this.y_pos = y_pos
+        this.vx = 2
+        this.vy = 2
+        this.height = 30
+        this.width = 60
+        this.target = target
+        this.move_cooldown = 30
+        this.shot_cooldown = 120
+        this.shots = []
+        this.stun_ct = 0
+    }
+    update() {
+        this.x_pos += this.vx
+        this.y_pos += this.vy
+    }
+    draw(world_ctx) {
+        let x = this.x_pos - this.width/2.0
+        let y = this.y_pos - this.height/2.0
+        let w = this.width
+        let h = this.height
+        let kappa = .5522848
+        let ox = (w / 2) * kappa  // control point offset horizontal
+        let oy = (h / 2) * kappa  // control point offset vertical
+        let xe = x + w            // x-end
+        let ye = y + h            // y-end
+        let xm = this.x_pos       // x-middle
+        let ym = this.y_pos       // y-middle
+        world_ctx.beginPath()
+        world_ctx.moveTo(x, ym)
+        world_ctx.bezierCurveTo(x       , ym - oy , xm - ox , y       , xm , y  )
+        world_ctx.bezierCurveTo(xm + ox , y       , xe      , ym - oy , xe , ym )
+        world_ctx.bezierCurveTo(xe      , ym + oy , xm + ox , ye      , xm , ye )
+        world_ctx.bezierCurveTo(xm - ox , ye      , x       , ym + oy , x  , ym )
+        world_ctx.strokeStyle = world.colors[level-1]
+        world_ctx.stroke()
+        // world_ctx.fillStyle = world.colors[level]
+        // world_ctx.fill()
+
+        let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, this.height/2.1)
+        grd.addColorStop(0, 'transparent')
+        grd.addColorStop(1, RGBColor(world.colors[level-1]))
+        world_ctx.beginPath()
+        world_ctx.arc(this.x_pos, this.y_pos, this.height/2.1, 0, 2 * Math.PI, false)
+        world_ctx.stroke()
+        world_ctx.fillStyle = grd
+        world_ctx.fill()
+    }
+}
+
+
 class Enemy extends Rectangle {
     constructor(x_pos, y_pos, width, height, color, target) {
         super(x_pos, y_pos, width, height, color)
