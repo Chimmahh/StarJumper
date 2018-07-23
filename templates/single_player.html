@@ -19,10 +19,10 @@
             border: 1px solid white;
             box-sizing: border-box;
             position: absolute;
-            top:0;
-            bottom:0;
-            left:0;
-            right:0;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
             margin: 60px auto;
         }
         #button_div {
@@ -328,9 +328,10 @@
                             shield:              3.0   ,   level:                7,  },
         }
 
-        let fpsInterval, global_now, then, elapsed, interval
+        let fpsInterval, global_now, then, elapsed
         let fps = 60
         let restart = 0
+        let score = 0
         let level = 1
         let stage = 1
         let world = new World(world_cnv, sword_cnv)
@@ -340,7 +341,7 @@
                 world = new World(world_cnv, sword_cnv)
                 window.requestAnimationFrame(animate)
             } else {
-                sleep(20).then(() => {
+                sleep(10).then(() => {
                     world_cnv.width += 3
                     sword_cnv.width += 3
                     widenWorld()

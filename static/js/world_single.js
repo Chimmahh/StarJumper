@@ -40,7 +40,7 @@ class World {
             this.platforms.push(star)
         }
         ////// PORTALS ///////
-        for (let i=0; i<Math.min(level-1, 8); i++) {
+        for (let i=0; i<Math.min(level-1, 7); i++) {
             let radius = 20;
             x = random(radius, this.width - radius)
             y = random(radius, this.height * 0.8)
@@ -106,11 +106,6 @@ class World {
             return false
         }
     }
-
-    startLevel(level) {
-        console.log('hi')
-    }
-
     update() {
         if (this.player.health === 0) this.play = false
         if (this.player.victory) {
@@ -254,6 +249,7 @@ class World {
                     this.eyes[i].height -= 3
                     this.eyes[i].o_height -= 3
                     this.eye_hurt_count = 90
+                    this.eyes[i].o_height
                 }
             }
         }
@@ -345,7 +341,7 @@ class World {
                 let sword_hit = checkCTX(this.enemies[i], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
                 if (sword_hit) {
                     this.enemies[i].dead = true
-                    this.player.score += 1
+                    score += 1
                     if (this.enemies[i].y_pos + this.enemies[i].height < this.ground.y_pos) {
                         let rad = Math.PI * Math.random() * 2
                         for (let j = 0; j < 3; j++) {
@@ -366,7 +362,7 @@ class World {
                         if (this.player.shots[j].checkCollideRec(this.enemies[i])) {
                             if (this.player.shots[j].color === color_data[this.enemies[i].o_color].nemesis) {
                                 this.enemies[i].dead = true
-                                this.player.score += 1
+                                score += 1
                             } else {
                                 if (this.player.shots[j].color === 'mediumblue' && this.enemies[i].color !== 'mediumblue') {
                                     this.enemies[i].color = 'lightblue'
@@ -384,7 +380,7 @@ class World {
                                 if (this.player.shots[j].trail[k].checkCollideRec(this.enemies[i])) {
                                     if (this.enemies[i].color === 'red') {
                                         this.enemies[i].dead = true
-                                        this.player.score += 1
+                                        score += 1
                                     } else if (!this.player.shots[j].trail[k].color === 'yellow') {
                                         this.enemies[i].color = 'lightblue'
                                         this.enemies[i].freeze_ct = 60
@@ -604,20 +600,19 @@ class World {
         this.sword_ctx.clearRect(0, 0, this.sword_cnv.width, this.sword_cnv.height)
         this.world_ctx.clearRect(0, 0, this.world_cnv.width, this.world_cnv.height)
 
-        this.world_ctx.fillStyle = "white"
+        this.world_ctx.fillStyle = "lightgrey"
         this.world_ctx.font = "bolder 18px Arial"
-        let display_enemies = this.enemies.length < 10 ? "0" + this.enemies.length : this.enemies.length
-        this.world_ctx.fillText('Enemies: ', this.world_cnv.width - 108, 18)
-        this.world_ctx.fillText(display_enemies, this.world_cnv.width - 24, 18)
+        let add_left = score > 99 ? -20 : score > 9 ? -10 : 0;
 
-        let add_left = this.player.score > 99 ? -14 : 0
-        let display_score = this.player.score < 10 ? "0" + this.player.score : this.player.score
-        this.world_ctx.fillText('Kills: ', this.world_cnv.width - 72 + add_left, 36)
-        this.world_ctx.fillText(display_score, this.world_cnv.width - 24 + add_left, 36)
+        this.world_ctx.fillText('Level: ', this.world_cnv.width - 70 + add_left, 18)
+        this.world_ctx.fillText(level, this.world_cnv.width - 15 + add_left, 18)
 
-        let display_stars = this.player.star_count < 10 ? "0" + this.player.star_count : this.player.star_count
-        this.world_ctx.fillText('Stars: ', this.world_cnv.width - 79, 54)
-        this.world_ctx.fillText(display_stars, this.world_cnv.width - 24, 54)
+        this.world_ctx.fillText('Score: ', this.world_cnv.width - 74 + add_left, 36)
+        this.world_ctx.fillText(score, this.world_cnv.width - 15 + add_left, 36)
+
+        // let display_stars = this.player.star_count < 10 ? "0" + this.player.star_count : this.player.star_count
+        // this.world_ctx.fillText('Stars: ', this.world_cnv.width - 79, 54)
+        // this.world_ctx.fillText(display_stars, this.world_cnv.width - 24, 54)
 
         let status_bar_left = this.world_cnv.width * 0.25
         let status_bar_width = this.world_cnv.width * 0.5
@@ -631,7 +626,7 @@ class World {
         ///// HEALTH /////
         this.world_ctx.lineWidth = 2
         this.world_ctx.font = "bold 14px Arial"
-        let display_health = Math.min(this.player.health, 10) * 9.8
+        let display_health = Math.min(this.player.health, this.player.base_health) * 9.8
         let display_base_health = this.player.base_health * 9.8
         ///// DRAW BARS AND BORDER /////
         this.world_ctx.fillStyle = 'rgba(255, 20, 147, 0.8)'

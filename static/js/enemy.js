@@ -6,7 +6,6 @@ class Eye {
         this.o_color = color
         this.color = color
         this.life = 5
-        this.hurt_count = 0
         this.blink_count = 0
         this.blink_dir = 0
         this.vx = 2.5
@@ -40,11 +39,10 @@ class Eye {
         } else if (this.y_pos - this.o_height/2 < 60) {
             this.vy *= -1
             this.y_pos = Math.round(60 + this.o_height/2)
-        }
-        if (hurt_count > 0) {
-            if (this.vx < 0) {
+        } else if (hurt_count > 0) {
+            if (this.vx < -0.02) {
                 this.vx += 0.02
-            } else {
+            } else if (this.vx > 0.02) {
                 this.vx -= 0.02
             }
         } else if (Math.abs(this.vx) < 2.5) {
@@ -56,6 +54,7 @@ class Eye {
         }
         this.x_pos += this.vx
         this.y_pos += this.vy
+
         if (this.blink_count >= 0) {
             return this.blink()
         } else {
@@ -87,11 +86,11 @@ class Eye {
                 this.width = 60
             }
         } else {
-            let squint = this.life / 6
+            let squint = this.o_height/36
             if (this.blink_count >= 30) {
-                this.height -= squint * this.o_height/30
+                this.height -= squint
             } else if (this.blink_count > 0) {
-                this.height += squint * this.o_height/30
+                this.height += squint
             } else {
                 this.height = 30 - (5 - this.life) * 3
             }
@@ -103,7 +102,7 @@ class Eye {
         if (this.life === 0) {
             this.throb += 1
             if (this.throb === 15) {
-                this.throb === 0
+                this.throb = 0
             }
         }
         if (hurt_count < 0 || hurt_count % 3 < 2) {
@@ -113,11 +112,17 @@ class Eye {
             } else (
                 eye_color = world.colors[level - 1]
             )
+            let x_throb = 0
+            let y_throb = 0
+            if (this.throb > 10) {
+                x_throb = (this.throb - 10) * 2
+                y_throb = this.height > 5 ? this.throb - 10 : 0
+            }
 
-            let x = this.x_pos - (this.width - this.throb % 10) / 2.0
-            let y = this.y_pos - (this.height - this.throb % 10) / 2.0
-            let w = (this.width - this.throb % 10)
-            let h = (this.height - this.throb % 10)
+            let x = this.x_pos - (this.width - x_throb) / 2.0
+            let y = this.y_pos - (this.height - y_throb) / 2.0
+            let w = (this.width - x_throb)
+            let h = (this.height - y_throb)
             let kappa = .5522848
             let ox = (w / 2) * kappa  // control point offset horizontal
             let oy = (h / 2) * kappa  // control point offset vertical
@@ -135,15 +140,20 @@ class Eye {
             world_ctx.strokeStyle = eye_color
             world_ctx.stroke()
 
-            let rad = Math.min(this.width - this.throb % 10, this.height - this.throb % 10) / 2.1
-            let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, rad)
-            grd.addColorStop(0, 'black')
-            grd.addColorStop(1, eye_color)
-            world_ctx.beginPath()
-            world_ctx.arc(this.x_pos, this.y_pos, rad, 0, 2 * Math.PI, false)
-            world_ctx.stroke()
-            world_ctx.fillStyle = grd
-            world_ctx.fill()
+            let rad = Math.min(this.width - x_throb, this.height - y_throb) / 2.1
+            if (rad > 0) {
+                let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, rad)
+                grd.addColorStop(0, 'black')
+                grd.addColorStop(1, eye_color)
+                world_ctx.beginPath()
+                world_ctx.arc(this.x_pos, this.y_pos, rad, 0, 2 * Math.PI, false)
+                world_ctx.stroke()
+                world_ctx.fillStyle = grd
+                world_ctx.fill()
+            } else {
+                console.log(this.height, y_throb, this.throb)
+            }
+
         }
     }
 }

@@ -8,15 +8,14 @@ class StarJumper extends Rectangle {
         this.vy = 0
         this.vx = 0
         this.mx = color_data[color].mx
-        this.star_count = 50
         this.on_platform = true
         this.staa_ridin = false
         this.hurt_count = 0
         this.last_teleport = {}
         this.freeze_ct = 0
         this.display_shield_ct = 0
+        // this.star_count = 20
         this.star_cooldown = 10
-        this.score = 0
         this.victory = false
         this.base_health = 10
         this.health = 10
@@ -135,43 +134,42 @@ class StarJumper extends Rectangle {
                 this.flip_count = 0
             }
         ///// IF YOU ARE FLIPPING, UP OR DOWN /////
-        } else {
-            if (this.flip_count > 0) {
-                if (this.flip_type === 'up') {
-                    this.vy -= 0.06
-                } else {
-                    this.vy += 0.5
-                }
-                this.y_pos += this.vy
-                if (this.y_pos + this.height >= platforms[0].y_pos) {
-                    this.y_pos = platforms[0].y_pos - this.height
-                    this.flip_count = 0
-                } else {
-                    this.flip_count -= 1
-                }
-            ///// OTHERWISE CHECK NORMAL HITS /////
+        }
+        if (this.flip_count > 0) {
+            if (this.flip_type === 'up') {
+                this.vy -= 0.06
             } else {
-                for (let i=0; i<platforms.length; i++) {
-                    ///// LANDED ON STAR OR GROUND /////
-                    if (this.landed(platforms[i])) {
-                        this.y_pos = platforms[i].top() - this.height
-                        this.vy = 0
-                        this.on_platform = true
-                        ///// DOWN KEY = PICK UP STAR /////
-                        if (this.action.type === 'down' && this.star_cooldown < 0 && i > 0) {
-                            this.grabStar()
-                            this.star_cooldown = 10
-                            platforms.splice(i, 1)
-                            if (world.play_mode === 'multi') SendKeyDown('ArrowDown')
-                            this.action.type = ''
-                        }
-                        break
-                    ///// CHECK HEAD BUMP /////
-                    } else if (this.hitHead(platforms[i]) && this.vy < 0 && i > 0 && this.flip_count <= 0) {
-                        this.y_pos = platforms[i].bottom() + 0.001
-                        this.vy = -0.015
-                        break
+                this.vy += 0.5
+            }
+            this.y_pos += this.vy
+            if (this.y_pos + this.height >= platforms[0].y_pos) {
+                this.y_pos = platforms[0].y_pos - this.height
+                this.flip_count = 0
+            } else {
+                this.flip_count -= 1
+            }
+        ///// OTHERWISE CHECK NORMAL HITS /////
+        } else {
+            for (let i=0; i<platforms.length; i++) {
+                ///// LANDED ON STAR OR GROUND /////
+                if (this.landed(platforms[i])) {
+                    this.y_pos = platforms[i].top() - this.height
+                    this.vy = 0
+                    this.on_platform = true
+                    ///// DOWN KEY = PICK UP STAR /////
+                    if (this.action.type === 'down' && this.star_cooldown < 0 && i > 0) {
+                        this.grabStar()
+                        this.star_cooldown = 10
+                        platforms.splice(i, 1)
+                        if (world.play_mode === 'multi') SendKeyDown('ArrowDown')
+                        this.action.type = ''
                     }
+                    break
+                ///// CHECK HEAD BUMP /////
+                } else if (this.hitHead(platforms[i]) && this.vy < 0 && i > 0 && this.flip_count <= 0) {
+                    this.y_pos = platforms[i].bottom() + 0.001
+                    this.vy = -0.015
+                    break
                 }
             }
         }
@@ -223,7 +221,7 @@ class StarJumper extends Rectangle {
                 this.y_pos = platforms[0].y_pos - this.height
             }
             ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
-            if (this.action.type === 'down' && this.star_count > 0 && this.star_cooldown < 0) {
+            if (this.action.type === 'down' && this.star_cooldown < 0) {  // && this.star_count > 0
                 let new_star_x, new_star_y
                 if (isPlayer) {
                     new_star_x = this.x_pos + (this.width - world.star_size) / 2
@@ -236,7 +234,7 @@ class StarJumper extends Rectangle {
                 let star = new Rectangle(new_star_x, new_star_y, world.star_size, world.star_size, 'white')
                 platforms.push(star)
                 this.vy = 0
-                this.star_count -= 1
+                // this.star_count -= 1
                 this.action.type = ''
                 this.star_cooldown = 10
             }
@@ -433,7 +431,7 @@ class StarJumper extends Rectangle {
     }
     grabStar() {
         this.on_platform = false
-        this.star_count += 1
+        // this.star_count += 1
         this.energy += 20
         if (this.energy > 100) this.energy = 100
     }
