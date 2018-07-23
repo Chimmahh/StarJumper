@@ -16,7 +16,7 @@ class StarJumper extends Rectangle {
         this.freeze_ct = 0
         this.display_shield_ct = 0
         this.star_cooldown = 10
-        this.score = {}
+        this.score = 0
         this.victory = false
         this.base_health = 10
         this.health = 10
@@ -300,7 +300,8 @@ class StarJumper extends Rectangle {
             world_ctx.lineTo(x, y)
             rot += step
         }
-        world_ctx.fillStyle = "rgba(255,20,147," + this.health / this.base_health + ")"
+        let rgb = new RGBColor(color_data[this.color].nemesis)
+        world_ctx.fillStyle = "rgba(" + rgb['r'] + "," + rgb['g'] + "," + rgb['b'] + "," + this.health / this.base_health + ")"
         world_ctx.fill()
 
         ///// FLIPPING === SWORD SEQUENCE /////
@@ -343,7 +344,7 @@ class StarJumper extends Rectangle {
                 }
                 this.sword_trail[this.sword_trail.length - 1].push({
                     cx: cx,            tx: this.sword_tip.x_pos,   rgb: new RGBColor(this.color),
-                    cy: cy + adj_cy,   ty: this.sword_tip.y_pos,   color: this.color,    life: 100
+                    cy: cy + adj_cy,   ty: this.sword_tip.y_pos,   color: this.color,    life: 60
                 })
                 world_ctx.strokeStyle = this.color
                 world_ctx.beginPath()

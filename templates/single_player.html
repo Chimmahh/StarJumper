@@ -294,7 +294,7 @@
             'white':       {shot:           StarShot   ,   enemy:       WhiteEnemy,
                             shot_speed:          6.0   ,   width:               10,
                             shot_cost:           6.0   ,   height:              20,
-                            mx:                  2.5   ,   nemesis:         'none',
+                            mx:                  2.5   ,   nemesis:        'black',
                             shield:              1.0   ,   level:                1,  },
             'red':         {shot:            RedShot   ,   enemy:         RedEnemy,
                             shot_speed:          7.0   ,   width:               30,
@@ -336,7 +336,6 @@
         let world = new World(world_cnv, sword_cnv)
 
         function widenWorld() {
-
             if (world_cnv.width >= 300*level || level > 4) {
                 world = new World(world_cnv, sword_cnv)
                 window.requestAnimationFrame(animate)

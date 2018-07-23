@@ -1,53 +1,150 @@
 
 class Eye {
-    constructor(x_pos, y_pos, target) {
+    constructor(x_pos, y_pos, color) {
         this.x_pos = x_pos
         this.y_pos = y_pos
-        this.vx = 2
-        this.vy = 2
+        this.o_color = color
+        this.color = color
+        this.life = 5
+        this.hurt_count = 0
+        this.blink_count = 0
+        this.blink_dir = 0
+        this.vx = 2.5
+        this.vy = 1
+        this.o_height = 30
         this.height = 30
+        this.o_width = 60
         this.width = 60
-        this.target = target
         this.move_cooldown = 30
         this.shot_cooldown = 120
         this.shots = []
         this.stun_ct = 0
+        this.throb = 0
     }
-    update() {
+    cx() {
+        return this.x_pos
+    }
+    cy() {
+        return this.y_pos
+    }
+    update(ground, hurt_count, enemies) {
+        if (this.x_pos + this.o_width/2 > ground.width * 0.9) {
+            this.vx *= -1
+            this.x_pos = Math.round(ground.width * 0.9 - this.o_width/2)
+        } else if (this.x_pos - this.o_width/2 < ground.width * 0.1) {
+            this.vx *= -1
+            this.x_pos = Math.round(ground.width * 0.1 + this.o_width/2)
+        } else if (this.y_pos + this.o_height/2 > ground.y_pos/2) {
+            this.vy *= -1
+            this.y_pos = Math.round(ground.y_pos/2 - this.o_height/2)
+        } else if (this.y_pos - this.o_height/2 < 60) {
+            this.vy *= -1
+            this.y_pos = Math.round(60 + this.o_height/2)
+        }
+        if (hurt_count > 0) {
+            if (this.vx < 0) {
+                this.vx += 0.02
+            } else {
+                this.vx -= 0.02
+            }
+        } else if (Math.abs(this.vx) < 2.5) {
+            if (this.vx < 0) {
+                this.vx -= 0.02
+            } else {
+                this.vx += 0.02
+            }
+        }
         this.x_pos += this.vx
         this.y_pos += this.vy
+        if (this.blink_count >= 0) {
+            return this.blink()
+        } else {
+            let rnd = Math.random()
+            if (rnd < 0.02) {
+                if (this.life === 0) {
+                    this.blink_count = 60
+                    this.blink_dir = 'height'
+                } else if (enemies < 4 + level) {
+                    this.blink_count = 60
+                    this.blink_dir = 'width'
+                } else if (rnd < 0.002) {
+                    this.blink_count = 60
+                    this.blink_dir = 'width'
+                } else  {
+                    this.blink_count = 60
+                    this.blink_dir = 'height'
+                }
+            }
+        }
     }
-    draw(world_ctx) {
-        let x = this.x_pos - this.width/2.0
-        let y = this.y_pos - this.height/2.0
-        let w = this.width
-        let h = this.height
-        let kappa = .5522848
-        let ox = (w / 2) * kappa  // control point offset horizontal
-        let oy = (h / 2) * kappa  // control point offset vertical
-        let xe = x + w            // x-end
-        let ye = y + h            // y-end
-        let xm = this.x_pos       // x-middle
-        let ym = this.y_pos       // y-middle
-        world_ctx.beginPath()
-        world_ctx.moveTo(x, ym)
-        world_ctx.bezierCurveTo(x       , ym - oy , xm - ox , y       , xm , y  )
-        world_ctx.bezierCurveTo(xm + ox , y       , xe      , ym - oy , xe , ym )
-        world_ctx.bezierCurveTo(xe      , ym + oy , xm + ox , ye      , xm , ye )
-        world_ctx.bezierCurveTo(xm - ox , ye      , x       , ym + oy , x  , ym )
-        world_ctx.strokeStyle = world.colors[level-1]
-        world_ctx.stroke()
-        // world_ctx.fillStyle = world.colors[level]
-        // world_ctx.fill()
+    blink() {
+        if (this.blink_dir === 'width') {
+            if (this.blink_count > 30) {
+                this.width -= 1.9
+            } else if (this.blink_count > 0) {
+                this.width += 1.9
+            } else {
+                this.width = 60
+            }
+        } else {
+            let squint = this.life / 6
+            if (this.blink_count >= 30) {
+                this.height -= squint * this.o_height/30
+            } else if (this.blink_count > 0) {
+                this.height += squint * this.o_height/30
+            } else {
+                this.height = 30 - (5 - this.life) * 3
+            }
+        }
+        this.blink_count -= 1
+        if (this.blink_count === 30) return true
+    }
+    draw(world_ctx, hurt_count) {
+        if (this.life === 0) {
+            this.throb += 1
+            if (this.throb === 15) {
+                this.throb === 0
+            }
+        }
+        if (hurt_count < 0 || hurt_count % 3 < 2) {
+            let eye_color
+            if (level >= 8) {
+                eye_color = 'deeppink'
+            } else (
+                eye_color = world.colors[level - 1]
+            )
 
-        let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, this.height/2.1)
-        grd.addColorStop(0, 'transparent')
-        grd.addColorStop(1, RGBColor(world.colors[level-1]))
-        world_ctx.beginPath()
-        world_ctx.arc(this.x_pos, this.y_pos, this.height/2.1, 0, 2 * Math.PI, false)
-        world_ctx.stroke()
-        world_ctx.fillStyle = grd
-        world_ctx.fill()
+            let x = this.x_pos - (this.width - this.throb % 10) / 2.0
+            let y = this.y_pos - (this.height - this.throb % 10) / 2.0
+            let w = (this.width - this.throb % 10)
+            let h = (this.height - this.throb % 10)
+            let kappa = .5522848
+            let ox = (w / 2) * kappa  // control point offset horizontal
+            let oy = (h / 2) * kappa  // control point offset vertical
+            let xe = x + w            // x-end
+            let ye = y + h            // y-end
+            let xm = this.x_pos       // x-middle
+            let ym = this.y_pos       // y-middle
+
+            world_ctx.beginPath()
+            world_ctx.moveTo(x, ym)
+            world_ctx.bezierCurveTo(x       , ym - oy , xm - ox , y       , xm , y )
+            world_ctx.bezierCurveTo(xm + ox , y       , xe      , ym - oy , xe , ym)
+            world_ctx.bezierCurveTo(xe      , ym + oy , xm + ox , ye      , xm , ye)
+            world_ctx.bezierCurveTo(xm - ox , ye      , x       , ym + oy , x  , ym)
+            world_ctx.strokeStyle = eye_color
+            world_ctx.stroke()
+
+            let rad = Math.min(this.width - this.throb % 10, this.height - this.throb % 10) / 2.1
+            let grd = world_ctx.createRadialGradient(this.x_pos, this.y_pos, 0, this.x_pos, this.y_pos, rad)
+            grd.addColorStop(0, 'black')
+            grd.addColorStop(1, eye_color)
+            world_ctx.beginPath()
+            world_ctx.arc(this.x_pos, this.y_pos, rad, 0, 2 * Math.PI, false)
+            world_ctx.stroke()
+            world_ctx.fillStyle = grd
+            world_ctx.fill()
+        }
     }
 }
 
@@ -59,6 +156,7 @@ class Enemy extends Rectangle {
         this.move_cooldown = 30
         this.shot_cooldown = 120
         this.shots = []
+        this.last_teleport = {}
         this.stun_ct = 0
         this.freeze_ct = 0
         this.o_color = color
@@ -89,27 +187,53 @@ class WhiteEnemy extends Enemy {
         this.fire_range_y = 80
         this.vx = 1.5
         this.vy = 0.8
-        this.segment = 0
-        this.segment_dir = 1
-        this.range_adj = Math.floor(Math.random() * 40)
+        this.y_segment = 0
+        this.y_segment_dir = 1
+        this.x_escape_dir = false
+        this.x_escape_count = 0
+        this.range_adj = Math.floor(Math.random() * 40) + level < 4 ? level * 20 : 100
     }
-    update() {
+    update(ground) {
         if (this.move_cooldown < 0) {
+            this.x_escape_count -= 1
             if (this.stun_ct < 0 && this.freeze_ct < 0) {
-                this.keepDistanceX(150 + this.range_adj, 250 + this.range_adj)
-                ///// ALIGN Y WITHIN 10 PX /////
-                let ey = this.cy()
-                let ty = this.target.cy()
-                if (this.segment > 0) {
-                    this.segment -= 1
-                    this.y_pos += this.vy * this.segment_dir
-                } else if (ey > ty + 10) {
+                if (this.x_escape_count > 0) {
+                    this.x_pos += this.x_escape_dir
                     this.y_pos -= this.vy
-                } else if (ey < ty - 10) {
-                    this.y_pos += this.vy
                 } else {
-                    this.segment = Math.floor(random(30, 50))
-                    this.segment_dir = Math.random() < 0.5 ? 1 : -1
+                    this.keepDistanceX(50 + this.range_adj, 100 + this.range_adj)
+                    ///// ALIGN Y WITHIN 10 PX /////
+                    let ey = this.cy()
+                    let ty = this.target.cy()
+                    if (this.y_segment > 0) {
+                        this.y_segment -= 1
+                        this.y_pos += this.vy * this.y_segment_dir
+                    } else if (ey > ty + 10) {
+                        this.y_pos -= this.vy
+                    } else if (ey < ty - 10) {
+                        this.y_pos += this.vy
+                    } else {
+                        this.y_segment = Math.floor(random(30, 50))
+                        this.y_segment_dir = Math.random() < 0.5 ? 1 : -1
+                    }
+                    ///// Y BOUNCE /////
+                    if (this.y_pos + this.height > ground.y_pos) {
+                        this.y_segment_dir *= -1
+                    }
+                }
+                ///// X BOUNCE /////
+                if (this.x_pos > ground.width - this.width) {
+                    this.x_pos = ground.width - this.width
+                    this.x_escape_dir = -1
+                    let segment_multi = this.y_pos > ground.y_pos/2 ? 2 : 1
+                    this.x_escape_count = 60 * segment_multi
+                    this.y_segment = 0
+                } else if (this.x_pos < 0) {
+                    this.x_pos = 0
+                    this.x_escape_dir = 1
+                    let segment_multi = this.y_pos > ground.y_pos/2 ? 2 : 1
+                    this.x_escape_count = 60 * segment_multi
+                    this.y_segment = 0
                 }
             }
         }
@@ -347,7 +471,7 @@ class BlueEnemy extends Enemy {
         this.runaway_dir = 1
         this.range_adj = Math.floor(random(100, 200))
     }
-    update() {
+    update(world_width) {
         this.runaway_cooldown -= 1
         if (this.move_cooldown < 0 && this.stun_ct < 0 && this.freeze_ct < 0) {
             if (this.y_pos < 30){
@@ -362,7 +486,17 @@ class BlueEnemy extends Enemy {
             } else {
                 this.y_pos += this.vy * 2
             }
+            if (this.x_pos > world_width - this.width) {
+                this.x_pos = world_width - this.width
+                this.runaway_cooldown = 180
+                this.runaway_dir = -1
+            } else if (this.x_pos < 0) {
+                this.x_pos = 0
+                this.runaway_cooldown = 180
+                this.runaway_dir = 1
+            }
         }
+        
     }
     goodShot() {
         let theta = Math.atan2(this.target.cy()-this.cy(),this.target.cx()-this.cx()) > 0

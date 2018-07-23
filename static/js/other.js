@@ -178,8 +178,27 @@ class Portal {
 // ---------------------------------SHOTS & COLLISION-------------------------------------
 // ---------------------------------------------------------------------------------------
 
-function checkCTX(rec, cnv_width, ctx_data, trans_x) {
-    if (rec.width + rec.height < 20) {
+function checkCTX(rec, cnv_width, ctx_data, trans_x, center=false) {
+    if (center) {
+        ///// CHECK TOP, LEFT, RIGHT AND BOTTOM /////
+        let w = Math.round(rec.width)
+        let h = Math.round(rec.height)
+        let x = Math.round(rec.x_pos - rec.width/2 + trans_x)
+        let y = Math.round(rec.y_pos - rec.height/2)
+        let top_center =    (4 * cnv_width * (y     - 1)) + (4 * (rec.x_pos)) - 1
+        let left_middle =   (4 * cnv_width * (rec.y_pos)) + (4 * (x        )) - 1
+        let right_middle =  (4 * cnv_width * (rec.y_pos)) + (4 * (x + w    )) - 1
+        let bottom_center = (4 * cnv_width * (y + h - 1)) + (4 * (rec.x_pos)) - 1
+        if (ctx_data[top_center] > 0) {
+            return true
+        } else if (ctx_data[left_middle] > 0) {
+            return true
+        } else if (ctx_data[right_middle] > 0) {
+            return true
+        } else if (ctx_data[bottom_center] > 0) {
+            return true
+        }
+    } else if (rec.width + rec.height < 20) {
         ///// CHECK CENTER OF SMALL RECTANGLES /////
         let x = Math.round(rec.cx() + trans_x)
         let y = Math.round(rec.cy())

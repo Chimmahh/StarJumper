@@ -178,12 +178,10 @@ function addOrangeBuck(shot) {
 }
 
 function addRedTarget(x_pos, y_pos, shot, player, enemies, portal=false) {
-    if (enemies.length > 0) {
-        if (shot.shooter === player) {
-            shot.target = getClosestTarget(x_pos, y_pos, enemies)
-        } else {
-            shot.target = player
-        }
+    if (shot.shooter !== player) {
+        shot.target = player
+    } else if (enemies.length > 0) {
+        shot.target = getClosestTarget(x_pos, y_pos, enemies)
     } else {
         ///// CHANGE TO REGULAR SHOT IF NO TARGETS /////
         let save_vx = shot.vx  // AT LEAST KEEP IT RED-FAST
