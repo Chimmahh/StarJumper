@@ -37,4 +37,4 @@ ADD . /app
 
 # Gunicorn is used to run the application on Google App Engine. $PORT is defined
 # by the runtime.
-CMD gunicorn -b :$PORT project.wsgi
+CMD gunicorn -b :$PORT StarJumper.wsgi
