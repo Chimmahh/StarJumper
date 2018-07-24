@@ -6,19 +6,18 @@ env: flex # for Google Cloud Flexible App Engine
 # accessible through os.environ['VARIABLE_NAME']
 env_variables:
 # the secret key used for the Django app (from PROJECT-DIRECTORY/settings.py)
- SECRET_KEY: "=u!ief123r2bngc91dp54^+w_uj3p3l$^&fwcqe4znf03qq(ig"
- DEBUG: 'False' # always False for deployment
+  SECRET_KEY: "=u!ief123r2bngc91dp54^+w_uj3p3l$^&fwcqe4znf03qq(ig"
+  DEBUG: 'False' # always False for deployment
 
 # everything after /cloudsql/ can be found by entering >> gcloud sql instances describe DATABASE-NAME << in your Terminal
 # the DATABASE-NAME is the name you gave your project's PostgreSQL database
 # the second line from the describe output called connectionName can be copied and pasted after /cloudsql/
- DB_HOST: '/cloudsql/star-jumper-211217:us-west2:starjumper-db'
- DB_PORT: '5432' # PostgreSQL port
- DB_NAME: 'starjumper-db'
- DB_USER: 'postgres' # either 'postgres' (default) or one you created on the PostgreSQL instance page
- DB_PASSWORD: 'L4iyg87bk9euFI7i'
-
- STATIC_URL: 'https://storage.googleapis.com/starjumper-static/static/' # this is the url that you sync static files to
+  DB_HOST: '/cloudsql/star-jumper-211217:us-west2:starjumper-db'
+  DB_PORT: '5432' # PostgreSQL port
+  DB_NAME: 'starjumper-db'
+  DB_USER: 'postgres' # either 'postgres' (default) or one you created on the PostgreSQL instance page
+  DB_PASSWORD: 'L4iyg87bk9euFI7i'
+  STATIC_URL: 'https://storage.googleapis.com/starjumper-static/static/' # this is the url that you sync static files to
 
 handlers:
 - url: /static
