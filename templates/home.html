@@ -1,0 +1,49 @@
+
+<style>
+    #btn_div {
+        margin: 30px;
+        display: flex;
+    }
+    .big_bt {
+        text-decoration: none;
+        text-align: center;
+        flex: 1;
+        font-size: 3em;
+        width: 200px;
+        border: 2px solid white;
+        border-radius: 4px;
+        margin: 10px;
+        padding: 10px;
+    }
+    .big_bt:visited {
+        color: white;
+    }
+    .big_bt:hover {
+        color: black;
+        background-color: #00ccff;
+        cursor: pointer;
+    }
+</style>
+
+{% extends "base.html" %}
+
+{% block title %}Star Jumper Home{% endblock %}
+
+{% block header %}Star Jumper{% endblock %}
+
+{% block nav %}
+    <div class="top_nav">
+        <a class="active_nav" href="{% url 'app:home' %}">Home</a>
+        <a href="{% url 'app:rules' %}">Rules</a>
+        <a href="{% url 'app:leaderboard' %}">Leaderboard</a>
+        <a href="{% url 'app:contact' %}">Contact</a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div id="btn_div">
+        <a href="{% url 'app:single_player' %}" class="big_bt" id="single_player_bt">Single Player</a>
+        <a class="big_bt" id="multi_player_bt">Multiplayer</a>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,43 @@
+
+h1 {
+    margin: 10px;
+    font-size: 3em;
+}
+
+.login_logout {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: #fff
+}
+
+.login_logout:hover {
+    color: darkorchid;
+}
+
+.top_nav {
+    background-color: #0066ff;
+    overflow: hidden;
+}
+.top_nav a {
+    float: left;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+}
+.top_nav a:hover {
+    background-color: #00ccff !important;
+    color: black !important;
+}
+.top_nav a.active_nav {
+    background-color: darkorchid;
+    color: white;
+}
+
+body {
+    background-color: black;
+    color: white;
+    font-family: 'Press Start 2P', cursive;
+}

@@ -14,7 +14,7 @@ class World {
         let width_multi = level > 4 ? level/4 : 1
         this.width = sword_cnv.width * width_multi
         this.height = sword_cnv.height
-        this.star_size = 3
+        this.star_size = 4
         this.ground_height = 20
         this.dv = 0.03
         this.total_velocity = 0
@@ -107,7 +107,10 @@ class World {
         }
     }
     update() {
-        if (this.player.health === 0) this.play = false
+        if (this.player.health === 0 && this.play) {
+            this.play = false
+            recordScore()
+        }
         if (this.player.victory) {
             level += 1
             this.player.victory = false
@@ -223,7 +226,9 @@ class World {
                     eye_color = world.colors[level - 1]
                 )
                 if (this.eyes[i].blink_dir === 'width') {
-                    this.addEnemy(this.eyes[i].x_pos, this.eyes[i].y_pos, eye_color)
+                    let new_x = this.eyes[i].x_pos - color_data[eye_color].width / 2
+                    let new_y = this.eyes[i].y_pos - color_data[eye_color].height / 2
+                    this.addEnemy(new_x, new_y, eye_color)
                 } else {
                     let shot = new color_data[eye_color].shot(
                         this.eyes[i].x_pos, this.eyes[i].y_pos, eye_color, this.eyes[i])

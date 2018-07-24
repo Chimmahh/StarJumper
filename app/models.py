@@ -14,6 +14,20 @@ class Game(models.Model):
     type = models.ForeignKey(GameType, on_delete=models.CASCADE)
     date = models.DateTimeField(default=datetime.now())
 
+    OPEN = 'OP'
+    IN_PROGRESS = 'IN'
+    FINISHED = 'FI'
+
+    state = models.CharField(
+        max_length = 2,
+        choices = (
+            (OPEN, 'Open'),
+            (IN_PROGRESS, 'In Progress'),
+            (FINISHED, 'Finished')
+        ),
+        default = OPEN
+    )
+
     def __str__(self):
         return self.name
 
@@ -29,3 +43,13 @@ class GamePlayer(models.Model):
 
     def __str__(self):
         return str(self.game) + " - " + str(self.player)
+
+
+class SinglePlayerScore(models.Model):
+    player = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateTimeField(default=datetime.now())
+    level = models.IntegerField()
+    score = models.IntegerField()
+
+    def __str__(self):
+        return str(self.player) + " got to level " + str(self.level) + ' and scored ' + str(self.score)
