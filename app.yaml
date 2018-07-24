@@ -9,9 +9,6 @@ env_variables:
  SECRET_KEY: "=u!ief123r2bngc91dp54^+w_uj3p3l$^&fwcqe4znf03qq(ig"
  DEBUG: 'False' # always False for deployment
 
-runtime_config:
- python_version: 3 # enter your Python version BASE ONLY here. Enter 2 for 2.7.9 or 3 for 3.6.4runtime: python
-
 # everything after /cloudsql/ can be found by entering >> gcloud sql instances describe DATABASE-NAME << in your Terminal
 # the DATABASE-NAME is the name you gave your project's PostgreSQL database
 # the second line from the describe output called connectionName can be copied and pasted after /cloudsql/
