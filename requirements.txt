@@ -1,4 +1,6 @@
+pathlib==1.0.1
 asgiref==2.3.2
+async-timeout==3.0.0
 attrs==18.1.0
 autobahn==18.6.1
 Automat==0.7.0
