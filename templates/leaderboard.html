@@ -1,0 +1,102 @@
+
+<style>
+    #filter_div {
+        width: 20%;
+        display: flex;
+        margin: 20px auto;
+    }
+    #filter_div * {
+        padding: 5px;
+    }
+    #leaderboard_outer_div {
+        width: 60%;
+        margin: auto;
+        color: black;
+        background-color: grey;
+        border: solid 3px white;
+        border-radius: 5px;
+    }
+    #leaderboard_data_div, #leaderboard_headers{
+        display: flex;
+        text-align: center;
+    }
+    #leaderboard_headers {
+        font-size: 20px;
+
+    }
+    .leaderboard_data {
+        flex: 1;
+    }
+    .leaderboard_date {
+        flex: 2;
+    }
+    .leaderboard_player {
+        flex: 3;
+    }
+    .leaderboard_item {
+        padding: 10px;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+
+{% extends "base.html" %}
+
+{% block title %}Star Jumper Leaderboard{% endblock %}
+
+{% block header %}Leaderboard{% endblock %}
+
+{% block content %}
+    <div id="app">
+        <div id="filter_div">
+            <div>Filter</div>
+            <select name="filter" id="leaderboard_filter" v-model="filter" v-on:change="update">
+                <option value="all">All-time</option>
+                <option value="month">Last month</option>
+                <option value="week">Last week</option>
+            </select>
+        </div>
+        <div id="leaderboard_outer_div">
+            <div id="leaderboard_headers">
+                <div class="leaderboard_player leaderboard_item">Player</div>
+                <div class="leaderboard_data leaderboard_item">Score</div>
+                <div class="leaderboard_data leaderboard_item">Level</div>
+                <div class="leaderboard_date leaderboard_item">Date</div>
+            </div>
+            <div id="leaderboard_data_div" v-for="game in top10">
+                <div class="leaderboard_player leaderboard_item">[[ game.player ]]</div>
+                <div class="leaderboard_data leaderboard_item">[[ game.score ]]</div>
+                <div class="leaderboard_data leaderboard_item">[[ game.level ]]</div>
+                <div class="leaderboard_date leaderboard_item">[[ game.date ]]</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_body %}
+    <script>
+        let app = new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data: {
+                filter: 'week',
+                top10: []
+            },
+            methods: {
+                update() {
+                    filter = this.filter
+                    axios.get("{% url 'app:leaderboard_ajax' %}?filter=" + filter)
+                        .then(response => {
+                            console.log(response.data.top10)
+                            this.top10 = response.data.top10
+                    })
+                }
+            },
+            created: function () {
+                this.update()
+            }
+        })
+    </script>
+{% endblock %}
+

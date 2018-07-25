@@ -31,19 +31,9 @@
 
 {% block header %}Star Jumper{% endblock %}
 
-{% block nav %}
-    <div class="top_nav">
-        <a class="active_nav" href="{% url 'app:home' %}">Home</a>
-        <a href="{% url 'app:rules' %}">Rules</a>
-        <a href="{% url 'app:leaderboard' %}">Leaderboard</a>
-        <a href="{% url 'app:contact' %}">Contact</a>
-    </div>
-{% endblock %}
-
 {% block content %}
     <div id="btn_div">
         <a href="{% url 'app:single_player' %}" class="big_bt" id="single_player_bt">Single Player</a>
         <a class="big_bt" id="multi_player_bt">Multiplayer</a>
     </div>
-
 {% endblock %}

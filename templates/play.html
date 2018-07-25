@@ -2,542 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Star Jumper</title>
+    <title>{% block title %}{% endblock %}</title>
+
+    {% load staticfiles %}
     <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
-    <!--<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">-->
-    <style>
-        body {
-            color: white;
-            background-color: black;
-            font-family: 'Press Start 2P', cursive;
-        }
-        canvas {
-            border: 1px solid white;
-            background-size: 2400px 480px;
-            position: absolute;
-            top: 30px;
-            left: 30px;
-        }
-        button {
-            position: absolute;
-            top: 540px;
-            border-radius: 4px;
-            z-index: 10;
-        }
-        #show_modal_bt {
-            left: 30px;
-        }
-        #disconnect_bt {
-            left: 90px;
-        }
-        #modal_background {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 11; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
-        }
-        #instruction_modal_div {
-            position: fixed;
-            z-index: 12;
-            margin-left: -40%;
-            transition: margin-left 1s;
-            height: 300px;
-            width: 500px;
-            top: 50px;
-            border: 3px solid deepskyblue;
-            background-color: white;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        #instruction_options_div {
-            display: flex;
-            text-align: center;
-        }
-        .option {
-            flex: 1;
-            margin: 5px;
-            border-radius: 4px;
-            border: 3px solid black;
-            background-color: deepskyblue;
-            font-size: 1em;
-            padding: 5px;
-            font-weight: bolder;
-            color: black;
-        }
-        #rules_option {
-            background-color: darkorchid;
-        }
-        .option:hover {
-            background: mediumblue !important;
-            cursor: pointer;
-        }
-        .instruction_border {
-            position: absolute;
-            transition: margin-left 1s;
-            width: 500px;
-        }
-        .instruction {
-            height: 235px;
-            margin: 5px;
-            margin-top: 0;
-            padding: 5px;
-            border-radius: 4px;
-            border: 3px solid black;
-            color: black;
-        }
-        #instruction_div {
-            display: flex;
-        }
-        #rules_border {
-            margin-left: 0;
-        }
-        #controls_border {
-            margin-left: 100%;
-        }
-        #controls_outter_div {
-            display: flex;
-            flex-direction: column;
-        }
-        .controls_row {
-            flex: 1;
-            display: inline-flex;
-        }
-        .controls_row:not(:last-child) {
-            border-bottom: 2px solid grey;
-        }
-        .controls_col_1 {
-            flex: 3;
-            padding: 10px;
-            border-right: 2px solid grey;
-        }
-        .controls_col_2 {
-            flex: 4;
-            padding: 10px;
-        }
-        #other_border {
-            margin-left: 200%;
-        }
-        #instruction_div > button {
-            position: absolute;
-            left: 420px;
-            top: 268px;
-            font-family: 'Press Start 2P', cursive;
-        }
-    </style>
-</head>
-
-<body>
-    {{ user.username }}
-    <canvas id="world_cnv" width="1200" height="500"></canvas>
-    <canvas id="sword_cnv" width="1200" height="500"></canvas>
-    <!--<canvas id="player_shots_cnv" width="1200" height="500"></canvas>-->
-    <!--<canvas id="enemy_attack_cnv" width="1200" height="500"></canvas>-->
-    <div id="modal_background"></div>
-    <div id="instruction_modal_div">
-        <div id="instruction_options_div">
-            <div id="rules_option" class="option">Rules</div>
-            <div id="controls_option" class="option">Controls</div>
-            <div id="other_option" class="option">Other</div>
-        </div>
-        <div id="instruction_div">
-            <div id="rules_border" class="instruction_border">
-                <div id="rules_div" class="instruction">
-                    The object of Star Jumper is (to be determined)...
-                </div>
-            </div>
-            <div id="controls_border" class="instruction_border">
-                <div id="controls_outter_div" class="instruction">
-                    <div class="controls_row">
-                        <div class="controls_col_1">"A"/LEFT</div>
-                        <div class="controls_col_2">Go left</div>
-                    </div>
-                    <div class="controls_row">
-                        <div class="controls_col_1">"D"/RIGHT</div>
-                        <div class="controls_col_2">Go right</div>
-                    </div>
-                    <div class="controls_row">
-                        <div class="controls_col_1">"W"/UP</div>
-                        <div class="controls_col_2">Jump</div>
-                    </div>
-                    <div class="controls_row">
-                        <div class="controls_col_1">"S"/SPACE</div>
-                        <div class="controls_col_2">Grab/place star</div>
-                    </div>
-                    <div class="controls_row">
-                        <div class="controls_col_1">LEFT CLICK</div>
-                        <div class="controls_col_2">Shoot star</div>
-                    </div>
-                    <div class="controls_row">
-                        <div class="controls_col_1">RIGHT CLICK</div>
-                        <div class="controls_col_2">Flip attack</div>
-                    </div>
-                </div>
-            </div>
-            <div id="other_border" class="instruction_border">
-                <div id="other_div" class="instruction">
-                    Other Stuff
-                </div>
-            </div>
-            <button id="hide_modal_bt">Exit</button>
-        </div>
-    </div><br>
-    <button id="show_modal_bt">Rules</button>
-    <button id="disconnect_bt">Leave</button>
-
-    <script>
-        let world_cnv = document.querySelector('#world_cnv')
-        let sword_cnv = document.querySelector('#sword_cnv')
-        let show_modal_bt = document.querySelector('#show_modal_bt')
-        let disconnect_bt = document.querySelector('#disconnect_bt')
-        let modal_background = document.querySelector('#modal_background')
-        let instruction_modal_div = document.querySelector('#instruction_modal_div')
-        let hide_modal_bt = document.querySelector('#hide_modal_bt')
-        let rules_option = document.querySelector('#rules_option')
-        let controls_option = document.querySelector('#controls_option')
-        let other_option = document.querySelector('#other_option')
-        let rules_border = document.querySelector('#rules_border')
-        let controls_border = document.querySelector('#controls_border')
-        let other_border = document.querySelector('#other_border')
-
-        show_modal_bt.onclick = () => {
-            modal_background.style.display = 'block'
-            instruction_modal_div.style.transition = 'margin-left 1s'
-            instruction_modal_div.style.marginLeft = '20%'
-            world.play = false
-            restart = 0
-        }
-        hide_modal_bt.onclick = () => {
-            rules_border.style.marginLeft = '0%'
-            controls_border.style.marginLeft = '100%'
-            other_border.style.marginLeft = '200%'
-            instruction_modal_div.style.transition = 'none'
-            instruction_modal_div.style.marginLeft = '-50%'
-            modal_background.style.display = 'none'
-            world.play = true
-            window.requestAnimationFrame(animation_loop)
-        }
-        rules_option.onclick = () => {
-            rules_option.style.backgroundColor = 'darkorchid'
-            rules_border.style.marginLeft = '0%'
-            controls_option.style.backgroundColor = 'deepskyblue'
-            controls_border.style.marginLeft = '100%'
-            other_option.style.backgroundColor = 'deepskyblue'
-            other_border.style.marginLeft = '200%'
-        }
-        controls_option.onclick = () => {
-            rules_option.style.backgroundColor = 'deepskyblue'
-            rules_border.style.marginLeft = '-100%'
-            controls_option.style.backgroundColor = 'darkorchid'
-            controls_border.style.marginLeft = '0%'
-            other_option.style.backgroundColor = 'deepskyblue'
-            other_border.style.marginLeft = '100%'
-        }
-        other_option.onclick = () => {
-            rules_option.style.backgroundColor = 'deepskyblue'
-            rules_border.style.marginLeft = '-200%'
-            controls_option.style.backgroundColor = 'deepskyblue'
-            controls_border.style.marginLeft = '-100%'
-            other_option.style.backgroundColor = 'darkorchid'
-            other_border.style.marginLeft = '0%'
-        }
-    </script>
-
-    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/play.css' %}"  type="text/css">
     <script src="{% static 'js/color_parser.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/other.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/shots.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/star_jumper.js' %}"  type="text/javascript"></script>
     <script src="{% static 'js/enemy.js' %}"  type="text/javascript"></script>
-    <script src="{% static 'js/world.js' %}"  type="text/javascript"></script>
-    <script src="{% static "js/reconnecting-websocket.min.js" %}" type="text/javascript"></script>
-
-    <script>
-        let color_data = {
-                            //////// PLAYER ////////       //////// ENEMY ////////
-            'white':       {shot:           StarShot   ,   enemy:       WhiteEnemy,
-                            shot_speed:          6.0   ,   width:               10,
-                            shot_cost:           6.0   ,   height:              20,
-                            mx:                  2.5   ,   nemesis:         'none',
-                            shield:              1.0  },
-            'red':         {shot:            RedShot   ,   enemy:         RedEnemy,
-                            shot_speed:          7.0   ,   width:               30,
-                            shot_cost:          12.0   ,   height:              20,
-                            mx:                  3.0   ,   nemesis:   'mediumblue',
-                            shield:              2.0  },
-            'orange':      {shot:           StarShot   ,   enemy:      OrangeEnemy,
-                            shot_speed:          5.5   ,   width:               15,
-                            shot_cost:          12.0   ,   height:              20,
-                            mx:                  2.0   ,   nemesis:   'darkorchid',
-                            shield:              5.0  },
-            'yellow':      {shot:         YellowShot   ,   enemy:      YellowEnemy,
-                            shot_speed:          8.0   ,   width:               15,
-                            shot_cost:           8.0   ,   height:              30,
-                            mx:                  3.5   ,   nemesis:    'limegreen',
-                            shield:              2.0  },
-            'limegreen':   {shot:           StarShot   ,   enemy:       GreenEnemy,
-                            shot_speed:          9.0   ,   width:               15,
-                            shot_cost:          10.0   ,   height:              10,
-                            mx:                  3.5   ,   nemesis:       'yellow',
-                            shield:              2.0  },
-            'mediumblue':  {shot:           BlueShot   ,   enemy:        BlueEnemy,
-                            shot_speed:          6.5   ,   width:               30,
-                            shot_cost:          10.0   ,   height:              10,
-                            mx:                  2.5   ,   nemesis:          'red',
-                            shield:              3.0  },
-            'darkorchid':  {shot:           StarShot   ,   enemy:      PurpleEnemy,
-                            shot_speed:          7.5   ,   width:               25,
-                            shot_cost:           8.0   ,   height:              15,
-                            mx:                  3.0   ,   nemesis:       'orange',
-                            shield:              3.0  },
-        }
-
-        let play_mode = 'survival'
-        let rps, fps
-        if (play_mode === 'survival') {
-            fps = 60
-        } else if (play_mode === 'coop') {
-
-
-            rps = 10
-            fps = 30
-        }
-
-        let world = new World(world_cnv, sword_cnv, play_mode)
-        
-        let fpsInterval, recInterval, startTime, global_now, key_tracker
-        let then, elapsed, then_reconcile, elapsed_reconcile
-        let restart = 0
-        let color_index = 0                                                              ///// CHEAT COUNTER TO CYCLE COLORS
-        let host_ct = 0
-
-
-        let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws"
-        let ws_path = ws_scheme + '://' + window.location.host + "/game/ether/"
-        let socket = new ReconnectingWebSocket(ws_path)
-
-        socket.onmessage = function (message) {
-            let data = JSON.parse(message.data)
-            let guy
-            if (data.username) {
-                if (!world.pvp_data.hasOwnProperty(data.username)) {
-                    if (data.type === 'reconcile') {
-                        world.pvp_data[data.username] = new StarJumper(
-                            data.current.x_pos, data.current.y_pos, data.current.color, new KeyTracker())
-                    }
-                } else {
-                    guy = world.pvp_data[data.username]
-                    if (data.type === 'reconcile') {
-                        guy.x_pos = data.current.x_pos
-                        guy.y_pos = data.current.y_pos
-                        guy.vy = data.current.vy
-                        guy.color = data.current.color
-                    } else if (data.type === 'keydown') {
-                        guy.key_tracker.keyDown(data.key)
-                    } else if (data.type === 'keyup') {
-                        guy.key_tracker.keyUp(data.key)
-                    } else if (data.type === 'place') {
-                        guy.action.type = 'down'
-                        guy.action.data = {
-                            x_pos: data.placement.x_pos,
-                            y_pos: data.placement.y_pos
-                        }
-                    } else if (data.type === 'shot') {
-                        ReconstructShot(guy, (global_now - data.time) / fps, data.shot)
-                    } else if (data.type === 'sword') {
-                        guy.sword_trail.push(data.sword_trail)
-                    }
-                }
-            } else if (data.type === 'host') {
-                world.player.host = true
-            } else if (data.type === 'reconcile_host') {
-                world.host_update = data.host_update
-            }
-        }
-
-        socket.onopen = function () {
-            console.log("Connected to game socket")
-            socket.send(JSON.stringify({
-                "command": "join",
-                "game": {{ game.id }}
-            }))
-        }
-
-        function Reconcile() {
-            socket.send(JSON.stringify({
-                "command": "reconcile",
-                "game": {{ game.id }},
-                "client_now": global_now,
-                "current": {
-                    "x_pos": world.player.x_pos,
-                    "y_pos": world.player.y_pos,
-                    "vy": world.player.vy,
-                    "color": world.player.color,
-                }
-            }))
-        }
-
-        function SendKeyDown(key) {
-            socket.send(JSON.stringify({
-                "command": "keydown",
-                "game": {{ game.id }},
-                "client_now": global_now,
-                "key": key,
-            }))
-        }
-
-        function SendKeyUp(key) {
-            socket.send(JSON.stringify({
-                "command": "keyup",
-                "game": {{ game.id }},
-                "client_now": global_now,
-                "key": key,
-            }))
-        }
-
-        function ReconcileHost() {
-            socket.send(JSON.stringify({
-                "command": "reconcile_host",
-                "game": {{ game.id }},
-                "portals": world.portalXYVs(),
-                "stars": world.starXYs(),
-                "health": world.health_star.dictXYV(),
-            }))
-        }
-
-        function SendShot(shot) {
-            socket.send(JSON.stringify({
-                "command": "shot",
-                "game": {{ game.id }},
-                "client_now": global_now,
-                "shot": {
-                    "x_pos": shot.x_pos,
-                    "y_pos": shot.y_pos,
-                    "vx": shot.vx,
-                    "vy": shot.vy,
-                    "color": shot.color,
-                }
-            }))
-        }
-
-        function SendPlatform(x_pos, y_pos) {
-            socket.send(JSON.stringify({
-                "command": "place",
-                "game": {{ game.id }},
-                "placement": {
-                    "x_pos": x_pos,
-                    "y_pos": y_pos,
-                }
-            }))
-        }
-
-        function Leave() {
-            socket.send(JSON.stringify({
-                "command": "leave",
-                "game": {{ game.id }}
-            }))
-        }
-
-        function ReconstructShot(guy, time_diff, shot) {
-            let new_x = shot.x_pos
-            let new_y = shot.y_pos
-            let new_vx = shot.vx
-            let new_vy = shot.vy
-            let new_speed = color_data[shot.color].shot_speed
-            for (let i=0; i<time_diff; i++) {
-                new_x += new_vx
-                new_y += new_vy
-                new_vx *= .994
-                new_vy *= .994
-                new_speed *= .994
-            }
-            let new_shot = new color_data[shot.color].shot(new_x, new_y, shot.color, guy)
-            new_shot.vx = new_vx
-            new_shot.vy = new_vy
-            new_shot.speed = new_speed
-            guy.shots.push(new_shot)
-        }
-
-        function ReconstructSword(guy, time_diff, poly) {
-            let new_x = 5
-        }
-
-        function Animate(now) {
-            if (world.play) window.requestAnimationFrame(Animate)
-            global_now = now
-            if (!then) {
-                then = now
-                then_reconcile = now
-            }
-            elapsed_reconcile = now - then_reconcile
-            elapsed = now - then
-            if (elapsed > fpsInterval) {
-                then = now - (elapsed % fpsInterval)
-                world.update()
-                world.draw()
-            }
-            if (play_mode === 'coop') {
-                if (elapsed_reconcile > recInterval) {
-                    then_reconcile = now - (elapsed_reconcile % recInterval)
-                    Reconcile()
-                    host_ct += 1
-                }
-                if (world.player.host) {
-                    if (host_ct === 10 && elapsed_reconcile > recInterval/2) {   // STAGGER HOST RECONCILE SEND
-                        ReconcileHost()
-                        host_ct = 0
-                    }
-                }
-            }
-        }
-
-        function StartLoop() {
-            if (play_mode === 'coop') {
-                document.addEventListener('keydown', (evt) => {
-                    if (!world.player.key_tracker.isKeyDown(evt.key)) {
-                        world.player.key_tracker.keyDown(evt.key)
-                        if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
-                            world.player.action.type = 'down'
-                        } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
-                            SendKeyDown(evt.key)
-                        }
-                    }
-                })
-
-                document.addEventListener('keyup', (evt) => {
-                    world.player.key_tracker.keyUp(evt.key)
-                    SendKeyUp(evt.key)
-                })
-
-                disconnect_bt.onclick = () => {
-                    Leave()
-                    disconnect_bt.style.display = 'None'
-                }
-            } else {
-                world = new World(world_cnv, sword_cnv, play_mode)
-                document.addEventListener('keydown', (evt) => {
-                    if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
-                        world.player.action.type = 'down'
-                    } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
-                        world.player.key_tracker.keyDown(evt.key)
-                    }
-                })
-
-                document.addEventListener('keyup', (evt) => {
-                    world.player.key_tracker.keyUp(evt.key)
-                })
-            }
-
-            fpsInterval = 1000 / fps
-            recInterval = 1000 / rps
-            startTime = then
-            window.requestAnimationFrame(Animate)
-        }
-        StartLoop(fps, play_mode)
-    </script>
+    <script src="{% static 'js/world_single.js' %}"  type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+</head>
+<body>
+    <div id="button_div">
+        <button id="show_modal_bt">Rules</button>
+        <button id="disconnect_bt">Leave</button>
+    </div>
+    <div id="canvas_div">
+        <canvas id="world_cnv" width="300" height="500"></canvas>
+        <canvas id="sword_cnv" width="300" height="500"></canvas>
+        <!--<canvas id="player_shots_cnv" width="1200" height="500"></canvas>-->
+        <!--<canvas id="enemy_attack_cnv" width="1200" height="500"></canvas>-->
+    </div>
+    <div id="modal_background"></div>
+    <div id="instruction_modal_div">
+        <div id="main_modal_div">
+            <div id="instruction_options_div">
+                <div id="rules_option" class="option">Rules</div>
+                <div id="controls_option" class="option">Controls</div>
+                <div id="other_option" class="option">Other</div>
+            </div>
+            <div id="instruction_div">
+                <div id="rules_border" class="instruction_border">
+                    <div id="rules_div" class="instruction">
+                        The object of Star Jumper is (to be determined)...
+                    </div>
+                </div>
+                <div id="controls_border" class="instruction_border">
+                    <div id="controls_outter_div" class="instruction">
+                        <div class="controls_row">
+                            <div class="controls_col_1">"A"/LEFT</div>
+                            <div class="controls_col_2">Go left</div>
+                        </div>
+                        <div class="controls_row">
+                            <div class="controls_col_1">"D"/RIGHT</div>
+                            <div class="controls_col_2">Go right</div>
+                        </div>
+                        <div class="controls_row">
+                            <div class="controls_col_1">"W"/UP</div>
+                            <div class="controls_col_2">Jump</div>
+                        </div>
+                        <div class="controls_row">
+                            <div class="controls_col_1">"S"/SPACE</div>
+                            <div class="controls_col_2">Grab/place star</div>
+                        </div>
+                        <div class="controls_row">
+                            <div class="controls_col_1">LEFT CLICK</div>
+                            <div class="controls_col_2">Shoot star</div>
+                        </div>
+                        <div class="controls_row">
+                            <div class="controls_col_1">RIGHT CLICK</div>
+                            <div class="controls_col_2">Flip attack</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="other_border" class="instruction_border">
+                    <div id="other_div" class="instruction">
+                        Other Stuff
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="exit_div">
+            <div class="option blank_option"></div>
+            <div class="option blank_option"></div>
+            <div id="hide_modal_bt" class="option">Exit</div>
+        </div>
+    </div>
+    <script src="{% static 'js/DOM.js' %}"  type="text/javascript"></script>
+	{% block extra_body %}{% endblock %}
 </body>
 </html>

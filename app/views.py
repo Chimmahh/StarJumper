@@ -2,6 +2,7 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from datetime import date, datetime, timedelta
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.auth import logout, authenticate, login
@@ -44,6 +45,20 @@ def rules(request):
 
 def leaderboard(request):
     return render(request, "leaderboard.html")
+
+def leaderboard_ajax(request):
+    filter = request.GET['filter']
+    if filter == 'all':
+        top10_obj = SinglePlayerScore.objects.order_by('-score')[:10]
+    elif filter == 'week':
+        top10_obj = SinglePlayerScore.objects.filter(date__gte=datetime.now()-timedelta(days=7)).order_by('-score')[:10]
+    elif filter == 'month':
+        today = date.today()
+        top10_obj = SinglePlayerScore.objects.filter(date__year=today.year, date__month=today.month).order_by('-score')[:10]
+    data = {'top10': []}
+    for score in top10_obj:
+        data['top10'].append(score.toDict())
+    return JsonResponse(data)
 
 def contact(request):
     return render(request, "contact.html")

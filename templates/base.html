@@ -17,9 +17,12 @@
 		{% endif %}
 	</header>
     <div class="top_nav">
-        {% block nav %}{% endblock %}
+        <a class="active_nav" href="{% url 'app:home' %}">Home</a>
+        <a href="{% url 'app:rules' %}">Rules</a>
+        <a href="{% url 'app:leaderboard' %}">Leaderboard</a>
+        <a href="{% url 'app:contact' %}">Contact</a>
     </div>
-	<div>
+	<div id="content_block">
 		{% block content %}{% endblock %}
 	</div>
 	{% block extra_body %}{% endblock %}

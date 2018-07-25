@@ -55,8 +55,13 @@ ASGI_APPLICATION = 'StarJumper.routing.application'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '192.168.1.45', '127.0.0.1', 'star-jumper-211217.appspot.com']
-
+ALLOWED_HOSTS = [
+    '192.168.1.45',
+    'localhost',
+    '127.0.0.1',
+    'star-jumper-211217.appspot.com',
+    'www.starjumpergame.com',
+    'starjumpergame.com']
 
 # Application definition
 
@@ -99,9 +104,7 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'StarJumper.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -125,7 +128,6 @@ else:
         }
     }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
@@ -144,7 +146,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
@@ -154,14 +155,15 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+LOGIN_URL = '/app/login_register/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
-STATIC_URL = 'https://storage.googleapis.com/starjumper-static/static/'
-# STATIC_URL = '/static/'
-#STATIC_ROOT = '/static/'
-#STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_URL = 'https://storage.googleapis.com/starjumper-static/static/'
+STATIC_URL = '/static/'
+# STATIC_ROOT = '/static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]

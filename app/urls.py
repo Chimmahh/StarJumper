@@ -15,6 +15,7 @@ urlpatterns = [
     path('home/', views.home, name='home'),
     path('rules/', views.rules, name='rules'),
     path('leaderboard/', views.leaderboard, name='leaderboard'),
+    path('leaderboard_ajax/', views.leaderboard_ajax, name='leaderboard_ajax'),
     path('contact/', views.contact, name='contact'),
 ]
 
