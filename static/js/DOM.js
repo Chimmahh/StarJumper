@@ -1,4 +1,4 @@
-let canvas_div = document.querySelector('#canvas_div')
+
 let world_cnv = document.querySelector('#world_cnv')
 let sword_cnv = document.querySelector('#sword_cnv')
 let show_modal_bt = document.querySelector('#show_modal_bt')

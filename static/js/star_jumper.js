@@ -38,6 +38,10 @@ class StarJumper extends Rectangle {
             if (portals[i] !== this.last_teleport) {
                 let hit_player = portals[i].checkCollideRec(this)
                 if (hit_player) {
+                    ///// CHECK PRACTICE MODE STEP /////
+                    if (world.play_mode === 'practice' && step_name == 'Teleport') {
+                        iterateStep()
+                    }
                     if (this.flip_count > 0) this.sword_trail.push([])
                     this.vy = 0
                     let new_color = portals[i].color
@@ -117,6 +121,9 @@ class StarJumper extends Rectangle {
                 this.y_pos = health_star.y_pos - this.height
                 ///// PICK UP HEALTH STAR  /////
                 if (this.action.type === 'down' && this.star_cooldown < 0) {
+                    if (world.play_mode === 'practice' && step_name == 'Health') {
+                        iterateStep()
+                    }
                     this.staa_ridin = false
                     this.on_platform = false
                     if (this.health < 10) this.health += 1
@@ -156,15 +163,21 @@ class StarJumper extends Rectangle {
                     this.y_pos = platforms[i].top() - this.height
                     this.vy = 0
                     this.on_platform = true
-                    ///// DOWN KEY = PICK UP STAR /////
-                    if (this.action.type === 'down' && this.star_cooldown < 0 && i > 0) {
-                        this.grabStar()
-                        this.star_cooldown = 10
-                        platforms.splice(i, 1)
-                        if (world.play_mode === 'multi') SendKeyDown('ArrowDown')
-                        this.action.type = ''
+                    if (i > 0) {
+                        ///// CHECK PRACTICE MODE STEP /////
+                        if (world.play_mode === 'practice' && step_name == 'Land') {
+                            iterateStep()
+                        }
+                        ///// DOWN KEY = PICK UP STAR /////
+                        if (this.action.type === 'down' && this.star_cooldown < 0) {
+                            this.grabStar()
+                            this.star_cooldown = 10
+                            platforms.splice(i, 1)
+                            if (world.play_mode === 'multi') SendKeyDown('ArrowDown')
+                            this.action.type = ''
+                        }
+                        break
                     }
-                    break
                 ///// CHECK HEAD BUMP /////
                 } else if (this.hitHead(platforms[i]) && this.vy < 0 && i > 0 && this.flip_count <= 0) {
                     this.y_pos = platforms[i].bottom() + 0.001
@@ -222,6 +235,10 @@ class StarJumper extends Rectangle {
             }
             ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
             if (this.action.type === 'down' && this.star_cooldown < 0) {  // && this.star_count > 0
+                ///// CHECK PRACTICE MODE STEP /////
+                if (world.play_mode === 'practice' && step_name == 'Place') {
+                    iterateStep()
+                }
                 let new_star_x, new_star_y
                 if (isPlayer) {
                     new_star_x = this.x_pos + (this.width - world.star_size) / 2
@@ -445,7 +462,7 @@ class StarJumper extends Rectangle {
             this.facing = 1 // right
             this.vy = -4-ground_boost
             this.energy -= 35
-            return true
+            return 'down'
         } else if (dx > 0 & dy < 0 && this.energy >= 35) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'counter'
@@ -453,7 +470,7 @@ class StarJumper extends Rectangle {
             this.facing = 1 // right
             this.vy = -0.6
             this.energy -= 35
-            return true
+            return 'up'
         } else if (dx < 0 & dy > 0 && this.energy >= 35) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'counter'
@@ -461,7 +478,7 @@ class StarJumper extends Rectangle {
             this.facing = -1 // left
             this.vy = -4-ground_boost
             this.energy -= 35
-            return true
+            return 'down'
         } else if (this.energy >= 35) {
             this.flip_count = this.flip_duration
             this.flip_rotation = 'clockwise'
@@ -469,7 +486,7 @@ class StarJumper extends Rectangle {
             this.facing = -1 // left
             this.vy = -0.6
             this.energy -= 35
-            return true
+            return 'up'
         }
     }
 }

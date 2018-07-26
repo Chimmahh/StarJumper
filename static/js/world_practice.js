@@ -2,7 +2,7 @@
 class World {
     constructor(world_cnv, sword_cnv) {
         this.play = true
-        this.play_mode = 'single'
+        this.play_mode = 'practice'
         this.difficulty = 5
         this.world_cnv = world_cnv
         this.sword_cnv = sword_cnv
@@ -11,8 +11,7 @@ class World {
         this.sword_ctx = sword_cnv.getContext('2d')
         this.sword_ctx_data = []
         this.cnv_rect = sword_cnv.getBoundingClientRect()
-        let width_multi = level > 4 ? level/4 : 1
-        this.width = sword_cnv.width * width_multi
+        this.width = sword_cnv.width
         this.height = sword_cnv.height
         this.star_size = 4
         this.ground_height = 20
@@ -25,20 +24,27 @@ class World {
         this.enemies = []
         this.eyes = []
         this.eye_hurt_count = 0
-        this.trans_x = 0
         this.ground = new Rectangle(0, this.height - this.ground_height, this.width, this.ground_height, 'green')
         this.platforms.push(this.ground)
         this.player = new StarJumper(sword_cnv.width/2 - 20, sword_cnv.height-this.ground_height - 40, 'white')
         ///// STARS /////
         let x, y
-        for (let i=0; i<level*8; i++) {
-            x = random(10, this.width-10)
-            y = random(10, this.height-this.ground_height-100)
+        for (let i=0; i<10; i++) {
+            if (i === 0) {
+                x = 150
+                y = 450
+            } else if (i === 1) {
+                x = 650
+                y = 450
+            } else {
+                x = random(10, this.width-10)
+                y = random(10, this.height-this.ground_height-100)
+            }
             let star = new Rectangle(x, y, this.star_size, this.star_size, 'white')
             this.platforms.push(star)
         }
         ////// PORTALS ///////
-        for (let i=0; i<Math.min(level-1, 7); i++) {
+        for (let i=0; i<1; i++) {
             let radius = 20;
             x = random(radius, this.width - radius)
             y = random(radius, this.height * 0.8)
@@ -52,23 +58,19 @@ class World {
             this.portals.push(p2)
         }
         ////// HEALTH STAR ///////
-        if (level >= 8) {
-            y = random(0, this.height * 0.8)
-            x = random(100, this.width - 100)
-            this.health_star = new HealthStar(x, y, this.star_size, this.star_size, 'deeppink')
-            this.eyes.push(new Eye(this.width / 2 - 40, 100, 'deeppink'))
-            this.eyes.push(new Eye(this.width / 2 + 40, 100, 'deeppink'))
-        } else {
-            this.eyes.push(new Eye(this.width / 2 - 40, 100, this.colors[level-1]))
-            this.eyes.push(new Eye(this.width / 2 + 40, 100, this.colors[level-1]))
-        }
+        y = random(0, this.height * 0.8)
+        x = random(100, this.width - 100)
+        this.health_star = new HealthStar(x, y, this.star_size, this.star_size, 'deeppink');
+        ///// EYES /////
+        this.eyes.push(new Eye(this.width / 2 - 40, 100, 'mediumblue'))
+        this.eyes.push(new Eye(this.width / 2 + 40, 100, 'mediumblue'))
         ///// LEFT CLICK - SHOOT STAR ///////
         document.onclick = (e) => {
             let got_energy = this.player.energy >= color_data[this.player.color].shot_cost
             if (this.player.flip_count <= 0 && got_energy && restart > 10) {
                 this.player.energy -= color_data[this.player.color].shot_cost
                 ///// WHERE'D PLAYER CLICK /////
-                let clicked_x = e.clientX - this.trans_x - this.cnv_rect.left
+                let clicked_x = e.clientX - this.cnv_rect.left
                 let clicked_y = e.clientY - this.cnv_rect.top
                 ///// CREATE SHOT BASE /////
                 let shot = new color_data[this.player.color].shot(this.player.cx(), this.player.cy(), this.player.color, this.player)
@@ -76,17 +78,8 @@ class World {
                 let shot_vel = getShotVelocities(clicked_x, clicked_y, this.player.cx(), this.player.cy(), shot.speed)
                 shot.vx = shot_vel.vx
                 shot.vy = shot_vel.vy
-                ///// SPECIAL CASE - RED & ORANGE /////
-                if (this.player.color === 'red') {
-                    shot = addRedTarget(clicked_x, clicked_y, shot, this.player, this.enemies)
-                    if (this.enemies.length === 0) {
-                        let add_back_cost = color_data['red'].shot_cost - color_data['white'].shot_cost
-                        this.player.energy += add_back_cost
-                    }
-                } else if (this.player.color === 'orange') {
-                    addOrangeBuck(shot)
-                }
                 this.player.shots.push(shot)
+                if (step_name === 'Shoot') iterateStep()
             }
         }
         ///// RIGHT CLICK - SWORD SWIPE ///////
@@ -94,52 +87,48 @@ class World {
             if (this.player.flip_count <= 0 && !this.player.staa_ridin) {
                 let ground_boost = Math.max(6 - (this.ground.y_pos - this.player.y_pos) / this.player.height * 2, 0)
                 let result = this.player.getFlipAttack(
-                    e.clientX - this.cnv_rect.left - this.trans_x, e.clientY - this.cnv_rect.top, ground_boost)
+                    e.clientX - this.cnv_rect.left, e.clientY - this.cnv_rect.top, ground_boost)
                 if (result) {
                     this.player.sword_trail.push([])
                     this.player.sword_tip.x_pos = this.player.cx()
                     this.player.sword_tip.y_pos = this.player.cy()
+                    if (result === 'up' && step_name === 'Sword Up') {
+                        iterateStep()
+                    } else if (result === 'down' && step_name === 'Sword Down') {
+                        iterateStep()
+                    }
                 }
             }
             return false
         }
     }
     update() {
-        if (this.player.health === 0 && this.play) {
-            this.play = false
-            recordScore()
+        if (this.player.health <10 && this.player.hurt_count === 0) {
+            this.player.health += 1
         }
         if (this.player.victory) {
-            level += 1
             this.player.victory = false
             this.play = false
-            widenWorld()
+            finishPractice()
         } else {
             restart += 1
-            this.trans_x = this.getTransX()
             let pix_data = this.sword_ctx.getImageData(0, 0, this.sword_cnv.width, this.height)
             this.sword_ctx_data = pix_data.data
             let total_velocity = 0
-            if (level >= 8) {
-                ///// BOUNCE HEALTH STAR //////
-                this.health_star.x_pos += this.health_star.vx
-                this.health_star.y_pos += this.health_star.vy
-                let is_ob_right = this.health_star.x_pos + this.health_star.width > this.width
-                let is_ob_left = this.health_star.x_pos < 0
-                if (is_ob_right || is_ob_left) this.health_star.vx *= -1
-                let is_ob_top = this.health_star.y_pos > this.height - this.ground.height - this.star_size
-                let is_ob_bottom = this.health_star.y_pos < 0
-                if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1
-            }
+
+            /////HEALTH STAR //////
+            this.health_star.x_pos += this.health_star.vx
+            this.health_star.y_pos += this.health_star.vy
+            let is_ob_right = this.health_star.x_pos + this.health_star.width > this.width
+            let is_ob_left = this.health_star.x_pos < 0
+            if (is_ob_right || is_ob_left) this.health_star.vx *= -1
+            let is_ob_top = this.health_star.y_pos > this.height - this.ground.height - this.star_size
+            let is_ob_bottom = this.health_star.y_pos < 0
+            if (is_ob_top || is_ob_bottom) this.health_star.vy *= -1
+            ///// PORTAL UPDATE /////
             for (let i=0; i<this.portals.length; i++) {
                 total_velocity += Math.abs(this.portals[i].vx) + Math.abs(this.portals[i].vy)
-                ///// MOVE PORTAL, SIZE ACCORDING TO PORTAL PAIR /////
-                if (level >= 8) {
-                    let portal_pair_position = Math.abs(this.portals[i].portal_pair.x_pos - this.health_star.x_pos) / this.width
-                    if (portal_pair_position > 0) this.portals[i].update(portal_pair_position)
-                } else {
-                    this.portals[i].update(.5)
-                }
+                this.portals[i].update(.5)
                 ///// BOUNCE PORTALS OFF SIDES & GROUND //////
                 if (this.portals[i].x_pos + this.portals[i].rad > this.width) {
                     this.portals[i].setRight(this.width)
@@ -171,24 +160,22 @@ class World {
                         this.portals[j].vx > 0 ? this.portals[j].vx += dv: this.portals[j].vx -= dv
                     }
                 }
-                if (level >= 8) {
-                    ///// SEE IF PORTAL HITS HEALTH STAR, EXCEPT LAST PORTAL EXITED //////
-                    if (this.portals[i] !== this.health_star.last_teleport) {
-                        let hit_health_star = this.portals[i].checkCollideRec(this.health_star)
-                        if (hit_health_star) {
-                            this.health_star.last_teleport = this.portals[i].portal_pair
-                            this.health_star.x_pos = this.portals[i].portal_pair.x_pos
-                            this.health_star.y_pos = this.portals[i].portal_pair.y_pos
-                            if (this.portals[i].portal_pair.vx > 0) {
-                                this.health_star.vx = -Math.abs(this.health_star.vx)
-                            } else {
-                                this.health_star.vx = Math.abs(this.health_star.vx)
-                            }
-                            if (this.portals[i].portal_pair.vy > 0) {
-                                this.health_star.vy = -Math.abs(this.health_star.vy)
-                            } else {
-                                this.health_star.vy = Math.abs(this.health_star.vy)
-                            }
+                ///// SEE IF PORTAL HITS HEALTH STAR, EXCEPT LAST PORTAL EXITED //////
+                if (this.portals[i] !== this.health_star.last_teleport) {
+                    let hit_health_star = this.portals[i].checkCollideRec(this.health_star)
+                    if (hit_health_star) {
+                        this.health_star.last_teleport = this.portals[i].portal_pair
+                        this.health_star.x_pos = this.portals[i].portal_pair.x_pos
+                        this.health_star.y_pos = this.portals[i].portal_pair.y_pos
+                        if (this.portals[i].portal_pair.vx > 0) {
+                            this.health_star.vx = -Math.abs(this.health_star.vx)
+                        } else {
+                            this.health_star.vx = Math.abs(this.health_star.vx)
+                        }
+                        if (this.portals[i].portal_pair.vy > 0) {
+                            this.health_star.vy = -Math.abs(this.health_star.vy)
+                        } else {
+                            this.health_star.vy = Math.abs(this.health_star.vy)
                         }
                     }
                 }
@@ -200,8 +187,8 @@ class World {
             this.player.update(this.portals, this.platforms, this.enemies, this.width, this.height, this.health_star, true)
             ///// CHECK IF NORMAL STARS ARE INSIDE SWORD TRAIL /////
             for (let i=1; i<this.platforms.length; i++) {
-                if (this.platforms[i].x_pos + this.trans_x < this.world_cnv.width && this.platforms[i].x_pos + this.trans_x > 0) {
-                    let sword_hit = checkCTX(this.platforms[i], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
+                if (this.platforms[i].x_pos < this.world_cnv.width && this.platforms[i].x_pos > 0) {
+                    let sword_hit = checkCTX(this.platforms[i], this.sword_cnv.width, this.sword_ctx_data, 0)
                     if (sword_hit) {
                         this.platforms.splice(i, 1)
                         this.player.star_count += 1
@@ -215,14 +202,9 @@ class World {
         ///// EYE /////
         this.eye_hurt_count -= 1
         for (let i=0; i<this.eyes.length; i++) {
-            let attack = this.eyes[i].update(this.ground, this.eye_hurt_count, this.enemies.length)
+            let attack = this.eyes[i].update(this.ground, this.eye_hurt_count, this.enemies.length, true)
             if (attack) {
-                let eye_color
-                if (level >= 8) {
-                    eye_color = world.colors[Math.floor(Math.random()*7)]
-                } else (
-                    eye_color = world.colors[level - 1]
-                )
+                let eye_color = this.eyes[0].color
                 if (this.eyes[i].blink_dir === 'width') {
                     let new_x = this.eyes[i].x_pos - color_data[eye_color].width / 2
                     let new_y = this.eyes[i].y_pos - color_data[eye_color].height / 2
@@ -234,22 +216,21 @@ class World {
                         this.eyes[i].x_pos, this.eyes[i].y_pos, shot.speed)
                     shot.vx = shot_vel.vx
                     shot.vy = shot_vel.vy
-                    if (eye_color === 'red') {
-                        shot = addRedTarget(this.eyes[i].x_pos, this.eyes[i].y_pos, shot, this.player, this.enemies)
-                    } else if (eye_color === 'orange') {
-                        addOrangeBuck(shot)
-                    }
                     shot.life = 240
                     this.eyes[i].shots.push(shot)
                 }
             }
             ///// DID EYE HIT SWORD /////
             if (this.eyes[i].life > 0 && this.eye_hurt_count < 0) {
-                let sword_hit = checkCTX(this.eyes[i], this.sword_cnv.width, this.sword_ctx_data, this.trans_x, true)
+                let sword_hit = checkCTX(this.eyes[i], this.sword_cnv.width, this.sword_ctx_data, 0, true)
                 if (sword_hit) {
-                    this.eyes[i].hurt()
-                    this.eye_hurt_count = 90
-                    if (this.eyes[0].life + this.eyes[1].life === 0) this.player.victory = true
+                    if (step_name == 'Hurt Eye') {
+                        iterateStep()
+                    } else if (step_name == 'Kill Eye' || this.eyes[0].life + this.eyes[1].life > 2) {
+                        this.eyes[i].hurt()
+                        this.eye_hurt_count = 90
+                        if (this.eyes[0].life + this.eyes[1].life === 0) this.player.victory = true
+                    }
                 }
             }
         }
@@ -308,7 +289,7 @@ class World {
                     ///// CHECK COLLISION WITH GREEN SHADOW /////
                     if (this.player.hurt_count < 0 && this.player.health > 0) {
                         for (let j=0; j<this.enemies[i].shadows.length; j++) {
-                            let sword_hit = checkCTX(this.enemies[i].shadows[j], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
+                            let sword_hit = checkCTX(this.enemies[i].shadows[j], this.sword_cnv.width, this.sword_ctx_data, 0)
                             if (sword_hit) {
                                 this.enemies[i].shadows.splice(j, 1)
                             } else if (this.enemies[i].shadows[j].checkCollideRec(this.player)) {
@@ -337,8 +318,11 @@ class World {
                     update_result = this.enemies[i].update()
                 }
                 ///// CHECK IF PLAYER KILLED ENEMY ON SWORD /////
-                let sword_hit = checkCTX(this.enemies[i], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
+                let sword_hit = checkCTX(this.enemies[i], this.sword_cnv.width, this.sword_ctx_data, 0)
                 if (sword_hit) {
+                    if (step_name == 'Kill Enemy') {
+                        iterateStep()
+                    }
                     this.enemies[i].dead = true
                     score += 1
                     if (this.enemies[i].y_pos + this.enemies[i].height < this.ground.y_pos) {
@@ -359,6 +343,9 @@ class World {
                     ///// CHECK IF PLAYER SHOTS HIT ENEMY /////
                     for (let j = 0; j < this.player.shots.length; j++) {
                         if (this.player.shots[j].checkCollideRec(this.enemies[i])) {
+                            if (step_name == 'Stun Enemy') {
+                                iterateStep()
+                            }
                             if (this.player.shots[j].color === color_data[this.enemies[i].o_color].nemesis) {
                                 this.enemies[i].dead = true
                                 score += 1
@@ -395,14 +382,23 @@ class World {
                             for (let k=0; k<this.eyes.length; k++) {
                                 if (this.eyes[k].life > 0) {
                                     if (this.eyes[k].checkShotInEllipse(this.player.shots[j])) {
-                                        this.eyes[k].hurt()
-                                        this.eye_hurt_count = 90
-                                        if (this.eyes[0].life + this.eyes[1].life === 0) this.player.victory = true
-
+                                        if (step_name == 'Hurt Eye') {
+                                            iterateStep()
+                                        } else if (step_name == 'Kill Eye' || this.eyes[0].life + this.eyes[1].life > 2) {
+                                            this.eyes[k].hurt()
+                                            this.eye_hurt_count = 90
+                                            if (this.eyes[0].life + this.eyes[1].life === 0) this.player.victory = true
+                                        }
                                     } else if (this.player.shots[j].trail) {
                                         for (let m = 0; m < this.player.shots[j].trail.length; m++) {
                                             if (this.eyes[k].checkShotInEllipse(this.player.shots[j].trail[m])) {
-
+                                                if (step_name == 'Hurt Eye') {
+                                                    iterateStep()
+                                                } else if (step_name == 'Kill Eye' || this.eyes[0].life + this.eyes[1].life > 2) {
+                                                    this.eyes[k].hurt()
+                                                    this.eye_hurt_count = 90
+                                                    if (this.eyes[0].life + this.eyes[1].life === 0) this.player.victory = true
+                                                }
                                             }
                                         }
                                     }
@@ -540,8 +536,11 @@ class World {
                 shooter.shots.splice(index, 1)
         }
         ///// CHECK ON SWORD /////
-        let sword_hit = checkCTX(shot, this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
+        let sword_hit = checkCTX(shot, this.sword_cnv.width, this.sword_ctx_data, 0)
         if (sword_hit) {
+            if (step_name == 'Bounce') {
+                iterateStep()
+            }
             let new_shot = new StarShot(
                 shot.x_pos, shot.y_pos, sword_hit, this.player, 180)
             new_shot.vx = -shot.vx * 1
@@ -620,27 +619,9 @@ class World {
 
         this.world_ctx.fillStyle = "lightgrey"
         this.world_ctx.font = "bolder 18px Arial"
-        let add_left = score > 99 ? -20 : score > 9 ? -10 : 0;
+        this.world_ctx.fillText('Step: ', this.world_cnv.width - 70, 18)
+        this.world_ctx.fillText(step_index + 1, this.world_cnv.width - 15, 18)
 
-        this.world_ctx.fillText('Level: ', this.world_cnv.width - 70 + add_left, 18)
-        this.world_ctx.fillText(level, this.world_cnv.width - 15 + add_left, 18)
-
-        this.world_ctx.fillText('Score: ', this.world_cnv.width - 74 + add_left, 36)
-        this.world_ctx.fillText(score, this.world_cnv.width - 15 + add_left, 36)
-
-        // let display_stars = this.player.star_count < 10 ? "0" + this.player.star_count : this.player.star_count
-        // this.world_ctx.fillText('Stars: ', this.world_cnv.width - 79, 54)
-        // this.world_ctx.fillText(display_stars, this.world_cnv.width - 24, 54)
-
-        let status_bar_left = this.world_cnv.width * 0.25
-        let status_bar_width = this.world_cnv.width * 0.5
-        let player_position_in_world = this.player.cx() / this.width
-        let pp = status_bar_width * player_position_in_world + status_bar_left
-        let health_star_position_in_world, hp
-        if (level >= 8 ) {
-            health_star_position_in_world = (this.health_star.x_pos - 35) / this.width
-            hp = status_bar_width * health_star_position_in_world + status_bar_left
-        }
         ///// HEALTH /////
         this.world_ctx.lineWidth = 2
         this.world_ctx.font = "bold 14px Arial"
@@ -655,10 +636,9 @@ class World {
         this.world_ctx.rect(7, 7, display_base_health, 18)  //WHOLE RECT
         this.world_ctx.stroke()
         ///// HEALTH TEXT /////
-        add_left = this.player.health < 8 ? 8 : 0
         this.world_ctx.fillStyle = "black"
         this.world_ctx.fillText('Health', 12, 21)
-        this.world_ctx.fillText(Math.round(this.player.health), 82 + add_left, 21)
+        this.world_ctx.fillText(Math.round(this.player.health), 82, 21)
 
         ///// SHIELD /////
         let base_shield = color_data[this.player.color].shield
@@ -700,7 +680,7 @@ class World {
         this.world_ctx.rect(7, 55, display_base_energy, 18)  //WHOLE RECT
         this.world_ctx.stroke()
         ///// ENERGY TEXT /////
-        add_left = this.player.energy < 100 ? 8 : 0
+        let add_left = this.player.energy < 100 ? 8 : 0
         add_left += this.player.energy < 10 ? 8 : 0
         this.world_ctx.fillStyle = "black"
         this.world_ctx.fillText('Energy', 12, 69)
@@ -713,74 +693,7 @@ class World {
         this.world_ctx.fillText('Shield', 12, 45)
         this.world_ctx.fillText(Math.round(this.player.shield), 90, 45)
 
-        if (level > 4) {
-            ///// MINI-MAP ////
-            this.world_ctx.lineWidth = 2
-            this.world_ctx.beginPath()
-            this.world_ctx.moveTo(status_bar_left, 15)
-            this.world_ctx.lineTo(status_bar_left + status_bar_width, 15)
-            this.world_ctx.strokeStyle = 'white'
-            this.world_ctx.stroke()
-
-            ///// MINI-MAP HEALTH STAR HEART ///// -- ADAPTED FROM: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes
-            if (level >= 8) {
-                let dy = 8
-                this.world_ctx.beginPath()
-                this.world_ctx.moveTo(9.2 + hp, 2.5 + dy)
-                this.world_ctx.bezierCurveTo(9.2 + hp, 2 + dy, 8.3 + hp, 0 + dy, 5 + hp, 0 + dy)
-                this.world_ctx.bezierCurveTo(0 + hp, 0 + dy, 0 + hp, 6.3 + dy, 0 + hp, 6.3 + dy)
-                this.world_ctx.bezierCurveTo(0 + hp, 9.2 + dy, 3.3 + hp, 12.8 + dy, 9.2 + hp, 15.8 + dy)
-                this.world_ctx.bezierCurveTo(15 + hp, 12.8 + dy, 18.3 + hp, 9.2 + dy, 18.3 + hp, 6.3 + dy)
-                this.world_ctx.bezierCurveTo(18.3 + hp, 6.3 + dy, 18.3 + hp, 0 + dy, 13.3 + hp, 0 + dy)
-                this.world_ctx.bezierCurveTo(10.8 + hp, 0 + dy, 9.2 + hp, 2 + dy, 9.2 + hp, 2.5 + dy)
-                this.world_ctx.fillStyle = this.health_star.color
-                this.world_ctx.fill()
-            }
-
-            ///// MINI-MAP PLAYER ///// -- ADAPTED FROM: http://jsfiddle.net/m1erickson/8j6kdf4o/
-            let rot = Math.PI / 2 * 3
-            let outer_rad = 12
-            let inner_rad = 6
-            let step = Math.PI / 5
-            let x, y
-            this.world_ctx.beginPath()
-            this.world_ctx.moveTo(pp, 15 - outer_rad)
-            for (let i = 0; i < 5; i++) {
-                x = pp + Math.cos(rot) * outer_rad
-                y = 15 + Math.sin(rot) * outer_rad
-                this.world_ctx.lineTo(x, y)
-                rot += step
-                x = pp + Math.cos(rot) * inner_rad
-                y = 15 + Math.sin(rot) * inner_rad
-                this.world_ctx.lineTo(x, y)
-                rot += step
-            }
-            this.world_ctx.lineTo(pp, 15 - outer_rad)
-            this.world_ctx.fillStyle = this.player.color
-            this.world_ctx.fill()
-
-            ///// MINI-MAP ENEMIES /////
-            let enemy_position_in_world, ep
-            for (let i = 0; i < this.enemies.length; i++) {
-                if (!this.enemies[i].dead) {
-                    enemy_position_in_world = this.enemies[i].cx() / this.width
-                    ep = status_bar_width * enemy_position_in_world + status_bar_left
-                    this.world_ctx.beginPath()
-                    this.world_ctx.moveTo(ep - 5, 20)
-                    this.world_ctx.lineTo(ep + 5, 20)
-                    this.world_ctx.lineTo(ep, 10)
-                    this.world_ctx.fillStyle = this.enemies[i].o_color
-                    this.world_ctx.fill()
-                }
-            }
-        }
-
-        ///// MAP SHIFT, DRAW PART OF ON CANVAS /////
-        this.world_cnv.style.backgroundPositionX = this.trans_x + 'px'
-        this.sword_cnv.style.backgroundPositionX = this.trans_x + 'px'
-        this.world_ctx.translate(this.trans_x, 0)
-        this.sword_ctx.translate(this.trans_x, 0)
-
+        ///// THE REST /////
         let grd = this.world_ctx.createLinearGradient(0, 0, this.ground.width, 0)
         grd.addColorStop("0", "#331900")
         grd.addColorStop(".1", "darkgreen")
@@ -805,13 +718,6 @@ class World {
                     if (this.enemies[i].stun_ct % 2 === 0) this.enemies[i].draw(this.world_ctx)
                 } else {
                     this.enemies[i].draw(this.world_ctx)
-                }
-            }
-            if (this.enemies[i].shadows) {
-                for (let j = 0; j < this.enemies[i].shadows.length; j++) {
-                    this.enemies[i].shadows[j].draw(this.world_ctx)
-                    this.enemies[i].shadows[j].life -= 1
-                    if (this.enemies[i].shadows[j].life === 0) this.enemies[i].shadows.splice(j, 1)
                 }
             }
             for (let j = 0; j < this.enemies[i].shots.length; j++) {
@@ -851,21 +757,6 @@ class World {
         }
 
         this.player.draw(this.world_ctx, this.sword_ctx, this.ground.y_pos)
-        if (level >= 8) this.health_star.draw(this.world_ctx)
-
-        this.world_ctx.resetTransform()
-        this.sword_ctx.resetTransform()
-    }
-
-    getTransX() {
-        // trans_x is how far left to shift to get the right part of the world into view
-        let trans_x = -this.player.x_pos + this.world_cnv.width/2
-        // if the adjustment would go past the end of the world...
-        if (trans_x > 0) {
-            return  0
-        } else if (trans_x < -this.width + this.world_cnv.width) {
-            return -this.width + this.world_cnv.width
-        }
-        return Math.round(trans_x)
+        this.health_star.draw(this.world_ctx)
     }
 }

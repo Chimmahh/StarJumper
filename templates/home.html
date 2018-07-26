@@ -1,19 +1,25 @@
 
 <style>
     #btn_div {
-        margin: 30px;
         display: flex;
+        width: 90%;
+        margin: auto;
     }
     .big_bt {
         text-decoration: none;
-        text-align: center;
         flex: 1;
+        display: flex;
         font-size: 3em;
-        width: 200px;
         border: 2px solid white;
-        border-radius: 4px;
-        margin: 10px;
-        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        height: 30%;
+        width: 100%;
+        margin: 40px;
+    }
+    .btn_text {
+        flex: 1;
+        margin: auto;
     }
     .big_bt:visited {
         color: white;
@@ -33,21 +39,26 @@
 
 {% block content %}
     <div id="btn_div">
-        <a href="{% url 'app:single_player' %}" class="big_bt" id="single_player_bt">Single Player</a>
-        <a class="big_bt" id="multi_player_bt">Multiplayer</a>
+        <a href="{% url 'app:single_player' %}" class="big_bt">
+            <div class="btn_text">Single Player</div>
+        </a>
+        <div class="big_bt">
+            <div class="btn_text">Multiplayer</div>
+        </div>
     </div>
 {% endblock %}
 
 {% block extra_body %}
     <script>
         let home_nav = document.querySelector('#home_nav')
-        let rules_nav = document.querySelector('#rules_nav')
+        let practice_nav = document.querySelector('#practice_nav')
         let leaderboard_nav = document.querySelector('#leaderboard_nav')
         let contact_nav = document.querySelector('#contact_nav')
 
         home_nav.className = 'active_nav'
-        rules_nav.className = ''
+        practice_nav.className = ''
         leaderboard_nav.className = ''
         contact_nav.className = ''
     </script>
+
 {% endblock %}

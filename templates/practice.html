@@ -1,0 +1,229 @@
+
+{% extends "base.html" %}
+
+{% block title %}Star Jumper Rules{% endblock %}
+
+{% block header %}Practice{% endblock %}
+
+{% block content %}
+    <div id="pracitce_outer_div">
+        <div id="pracitce_div">
+            <div id="checklist_div"></div>
+            <div id="canvas_outer">
+                <div id="canvas_div">
+                    <canvas id="world_cnv" width="800" height="500"></canvas>
+                    <canvas id="sword_cnv" width="800" height="500"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_body %}
+    <style>
+        #pracitce_outer_div {
+            display: flex;
+            width: 100%;
+        }
+        #pracitce_div {
+            display: flex;
+            width: 90%;
+            margin: 2% auto;
+        }
+        #checklist_div {
+            display: flex;
+            font-size: 18px;
+            margin: auto;
+            flex: 1;
+            flex-direction: column;
+        }
+        .checklist_instruction {
+            line-height: 24px;
+            height: 50px;
+            margin-bottom: 18px;
+            margin-top: 10px;
+            padding-bottom: 18px;
+            padding-top: 10px;
+
+        }
+        .checklist_item {
+            margin: 5px;
+            color: grey;
+        }
+        .checklist_current {
+            margin-top: 30px;
+            color: red;
+            font-weight: bold;
+        }
+        #canvas_outer {
+            flex: 2;
+            display: flex;
+            height: 100%;
+            width: 100%;
+            margin-left: 20px;
+        }
+        canvas {
+            margin: auto;
+            position: absolute;
+            border: 1px solid white;
+            box-sizing: border-box;
+        }
+    </style>
+    {% load staticfiles %}
+    <script src="{% static 'js/color_parser.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/other.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/shots.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/star_jumper.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/enemy.js' %}"  type="text/javascript"></script>
+    <script src="{% static 'js/world_practice.js' %}"  type="text/javascript"></script>
+    <script>
+        let home_nav = document.querySelector('#home_nav')
+        let practice_nav = document.querySelector('#practice_nav')
+        let leaderboard_nav = document.querySelector('#leaderboard_nav')
+        let contact_nav = document.querySelector('#contact_nav')
+
+        home_nav.className = ''
+        practice_nav.className = 'active_nav'
+        leaderboard_nav.className = ''
+        contact_nav.className = ''
+
+        let world_cnv = document.querySelector('#world_cnv')
+        let sword_cnv = document.querySelector('#sword_cnv')
+
+        let checklist_div = document.querySelector('#checklist_div')
+    </script>
+    <script>
+        let checklist = [
+            ["Move", "(1) Move", "Use 'A' and 'D' or the arrow keys to move left and right"],
+            ["Jump", "(2) Jump", "Use 'W' or arrow up key to jump"],
+            ["Land", "(3) Land on Star", "Star Jumper can jump on stars, try it out"],
+            ["Place", "(4) Place a Star", "Use 'S', space bar or arrow down while airborne to place a star"],
+            ["Teleport", "(5) Teleport", "Jump into a portal (you can't enter last portal exited)"],
+            ["Shoot", "(6) Shoot", "Left click mouse to shoot blaster"],
+            ["Sword Up", "(7) Sword Up", "Right click mouse ABOVE player for sword up attack"],
+            ["Sword Down", "(8) Sword Down", "Right click mouse BELOW player for sword down attack"],
+            ["Stun Enemy", "(9 Stun Enemy", "Shoot the (non-eye) enemy with your blaster"],
+            ["Kill Enemy", "(10) Kill Enemy", "Hit the (non-eye) enemy with your sword"],
+            ["Bounce", "(11) Bounce Bullet", "Hit enemy's bullet with your sword to bounce it"],
+            ["Health", "(12) Gain Health", "Jump on pink star and use 'S', space or arrow down to gain health"],
+            ["Hurt Eye", "(13) Hurt Eye", "Hit the floating eyes with your blaster or sword"],
+            ["Kill Eye", "(14) Kill Eye", "Hit the floating eyes 5 times each to beat level"],
+        ]
+
+        function iterateStep() {
+            step_index += 1
+            step_name = checklist[step_index][0]
+            checklist_div.innerHTML = ''
+            for (let i=0; i<checklist.length; i++) {
+                let checklist_item = document.createElement('div')
+                checklist_item.classList.add('checklist_item')
+                checklist_item.innerHTML = checklist[i][1]
+                if (i === step_index) {
+                    let checklist_instruction = document.createElement('div')
+                    checklist_instruction.classList.add('checklist_instruction')
+                    checklist_instruction.innerHTML = checklist[i][2]
+                    checklist_item.classList.add('checklist_current')
+                    checklist_div.appendChild(checklist_item)
+                    checklist_div.appendChild(checklist_instruction)
+                } else {
+                    checklist_div.appendChild(checklist_item)
+                }
+            }
+        }
+
+        let step_index = -1
+        iterateStep()
+
+        let fpsInterval, global_now, then, elapsed
+        let fps = 60
+        let restart = 0
+        let score = 0
+        let level = 1
+        let stage = 1
+        let color_data = {
+                            //////// PLAYER ////////       //////// ENEMY ////////
+            'white':       {shot:           StarShot   ,   enemy:       WhiteEnemy,
+                            shot_speed:          6.0   ,   width:               10,
+                            shot_cost:           6.0   ,   height:              20,
+                            mx:                  2.5   ,   nemesis:        'black',
+                            shield:              1.0   ,   level:                1,  },
+            'red':         {shot:            RedShot   ,   enemy:         RedEnemy,
+                            shot_speed:          7.0   ,   width:               30,
+                            shot_cost:          12.0   ,   height:              20,
+                            mx:                  3.0   ,   nemesis:   'mediumblue',
+                            shield:              2.0   ,   level:                5,  },
+            'orange':      {shot:           StarShot   ,   enemy:      OrangeEnemy,
+                            shot_speed:          5.5   ,   width:               15,
+                            shot_cost:          12.0   ,   height:              20,
+                            mx:                  2.0   ,   nemesis:   'darkorchid',
+                            shield:              5.0   ,   level:                6,  },
+            'yellow':      {shot:         YellowShot   ,   enemy:      YellowEnemy,
+                            shot_speed:          8.0   ,   width:               15,
+                            shot_cost:           8.0   ,   height:              30,
+                            mx:                  3.5   ,   nemesis:    'limegreen',
+                            shield:              2.0   ,   level:                2,  },
+            'limegreen':   {shot:           StarShot   ,   enemy:       GreenEnemy,
+                            shot_speed:          9.0   ,   width:               15,
+                            shot_cost:          10.0   ,   height:              10,
+                            mx:                  3.5   ,   nemesis:       'yellow',
+                            shield:              2.0   ,   level:                3,  },
+            'mediumblue':  {shot:           BlueShot   ,   enemy:        BlueEnemy,
+                            shot_speed:          6.5   ,   width:               30,
+                            shot_cost:          10.0   ,   height:              10,
+                            mx:                  2.5   ,   nemesis:          'red',
+                            shield:              3.0   ,   level:                4,  },
+            'darkorchid':  {shot:           StarShot   ,   enemy:      PurpleEnemy,
+                            shot_speed:          7.5   ,   width:               25,
+                            shot_cost:           8.0   ,   height:              15,
+                            mx:                  3.0   ,   nemesis:       'orange',
+                            shield:              3.0   ,   level:                7,  },
+        }
+
+        let world = new World(world_cnv, sword_cnv)
+
+        function finishPractice() {
+            window.location = "{% url 'app:home' %}"
+        }
+
+        function animate(now) {
+            if (world.play) window.requestAnimationFrame(animate)
+            global_now = now
+            if (!then) then = now
+            elapsed = now - then
+            if (elapsed > fpsInterval) {
+                then = now - (elapsed % fpsInterval)
+                world.update()
+                if (world.play) world.draw()
+            }
+        }
+
+        function startLoop() {
+            world = new World(world_cnv, sword_cnv)
+            document.addEventListener('keydown', (evt) => {
+                if (evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 's' || evt.key === 'S') {
+                    world.player.action.type = 'down'
+                } else if (!((evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W') && !world.player.on_platform)) {
+                    world.player.key_tracker.keyDown(evt.key)
+                    if (step_name === 'Move' &&
+                        (evt.key === 'A' || evt.key === 'a' ||
+                         evt.key === 'D' || evt.key === 'd' ||
+                         evt.key === 'ArrowLeft' || evt.key === 'ArrowRight')) {
+                            iterateStep()
+                    } else if (step_name === 'Jump' &&
+                        (evt.key === 'ArrowUp' || evt.key === 'w' || evt.key === 'W')) {
+                            iterateStep()
+                    }
+                }
+            })
+
+            document.addEventListener('keyup', (evt) => {
+                world.player.key_tracker.keyUp(evt.key)
+            })
+
+            fpsInterval = 1000 / fps
+            window.requestAnimationFrame(animate)
+        }
+
+        startLoop()
+    </script>
+{% endblock %}

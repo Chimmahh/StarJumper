@@ -40,8 +40,8 @@ def register(request):
 def home(request):
     return render(request, "home.html")
 
-def rules(request):
-    return render(request, "rules.html")
+def practice(request):
+    return render(request, "practice.html")
 
 def leaderboard(request):
     return render(request, "leaderboard.html")

@@ -22,7 +22,7 @@ class Eye {
         this.stun_ct = 0
         this.throb = 0
     }
-    update(ground, hurt_count, enemies) {
+    update(ground, hurt_count, enemies, practice=false) {
         if (this.x_pos + this.o_width/2 > ground.width * 0.9) {
             this.vx *= -1
             this.x_pos = Math.round(ground.width * 0.9 - this.o_width/2)
@@ -52,22 +52,33 @@ class Eye {
         this.y_pos += this.vy
 
         if (this.blink_count >= 0) {
-            return this.blink()
+            let result = this.blink()
+            return result
         } else {
             let rnd = Math.random()
             if (rnd < 0.02) {
-                if (this.life === 0) {
-                    this.blink_count = 60
-                    this.blink_dir = 'height'
-                } else if (enemies < 4 + level) {
-                    this.blink_count = 60
-                    this.blink_dir = 'width'
-                } else if (rnd < 0.002) {
-                    this.blink_count = 60
-                    this.blink_dir = 'width'
-                } else  {
-                    this.blink_count = 60
-                    this.blink_dir = 'height'
+                if (practice) {
+                    if (enemies === 0) {
+                        this.blink_count = 60
+                        this.blink_dir = 'width'
+                    } else if (rnd < 0.01) {
+                        this.blink_count = 60
+                        this.blink_dir = 'height'
+                    }
+                } else {
+                    if (this.life === 0) {
+                        this.blink_count = 60
+                        this.blink_dir = 'height'
+                    } else if (enemies < 4 + level) {
+                        this.blink_count = 60
+                        this.blink_dir = 'width'
+                    } else if (rnd < 0.002) {
+                        this.blink_count = 60
+                        this.blink_dir = 'width'
+                    } else  {
+                        this.blink_count = 60
+                        this.blink_dir = 'height'
+                    }
                 }
             }
         }
@@ -97,6 +108,11 @@ class Eye {
     checkShotInEllipse(shot) {
         return (shot.cx() - this.x_pos)**2 * this.ry**2 + (shot.cy() - this.y_pos)**2 * this.rx**2 <= this.rx**2 * this.ry**2
     }
+    hurt(){
+        this.life -= 1
+        this.height -= 3
+        this.o_height -= 3
+    }
     draw(world_ctx, hurt_count) {
         if (this.life === 0) {
             this.throb += 1
@@ -109,7 +125,7 @@ class Eye {
             if (level >= 8) {
                 eye_color = 'deeppink'
             } else (
-                eye_color = world.colors[level - 1]
+                eye_color = this.o_color
             )
             let x_throb = 0
             let y_throb = 0
