@@ -6,7 +6,17 @@
         margin: 20px auto;
     }
     #filter_div * {
+        flex: 2;
         padding: 5px;
+        width: 50%;
+        margin: auto;
+    }
+    #leaderboard_filter {
+        flex: 3;
+        background-color: mediumpurple;
+        font-size: 14px;
+        font-family: 'Press Start 2P', cursive;
+        text-align-last: center;
     }
     #leaderboard_outer_div {
         width: 60%;
@@ -16,25 +26,28 @@
         border: solid 3px white;
         border-radius: 5px;
     }
+    .leaderboard_item {
+        padding: 14px;
+        border: solid 2px white;
+    }
     #leaderboard_data_div, #leaderboard_headers{
+        font-size: 14px;
         display: flex;
         text-align: center;
     }
     #leaderboard_headers {
         font-size: 20px;
-
+        font-weight: bolder;
+        background-color: #0066ff;
     }
     .leaderboard_data {
-        flex: 1;
-    }
-    .leaderboard_date {
         flex: 2;
     }
-    .leaderboard_player {
+    .leaderboard_date {
         flex: 3;
     }
-    .leaderboard_item {
-        padding: 10px;
+    .leaderboard_player {
+        flex: 4;
     }
 </style>
 
@@ -59,12 +72,14 @@
         </div>
         <div id="leaderboard_outer_div">
             <div id="leaderboard_headers">
-                <div class="leaderboard_player leaderboard_item">Player</div>
+                <div class="leaderboard_data leaderboard_item">Rank</div>
+                <div class="leaderboard_player leaderboard_item" id="leaderboard_player_head">Player</div>
                 <div class="leaderboard_data leaderboard_item">Score</div>
                 <div class="leaderboard_data leaderboard_item">Level</div>
                 <div class="leaderboard_date leaderboard_item">Date</div>
             </div>
-            <div id="leaderboard_data_div" v-for="game in top10">
+            <div id="leaderboard_data_div" v-for="game, key in top10">
+                <div class="leaderboard_data leaderboard_item">[[ ++key ]]</div>
                 <div class="leaderboard_player leaderboard_item">[[ game.player ]]</div>
                 <div class="leaderboard_data leaderboard_item">[[ game.score ]]</div>
                 <div class="leaderboard_data leaderboard_item">[[ game.level ]]</div>
@@ -90,6 +105,14 @@
                         .then(response => {
                             console.log(response.data.top10)
                             this.top10 = response.data.top10
+                            for (let i=0; i<this.top10.length; i++) {
+                                dt = new Date(this.top10[i].date)
+                                day = dt.getDate()
+                                mon = dt.getMonth()
+                                mon++
+                                yr =dt.getFullYear().toString().slice(-2)
+                                this.top10[i].date = mon + "/" + day + "/" + yr
+                            }
                     })
                 }
             },
@@ -97,6 +120,17 @@
                 this.update()
             }
         })
+    </script>
+    <script>
+        let home_nav = document.querySelector('#home_nav')
+        let rules_nav = document.querySelector('#rules_nav')
+        let leaderboard_nav = document.querySelector('#leaderboard_nav')
+        let contact_nav = document.querySelector('#contact_nav')
+
+        home_nav.className = ''
+        rules_nav.className = ''
+        leaderboard_nav.className = 'active_nav'
+        contact_nav.className = ''
     </script>
 {% endblock %}
 

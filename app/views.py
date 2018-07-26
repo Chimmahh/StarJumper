@@ -86,5 +86,5 @@ def single_score(request):
     print(str(request.user.username) + " got to level " + str(level) + " and scored a " + str(score))
     record = SinglePlayerScore(player=request.user, score=score, level=level)
     record.save()
-    return render(request, "single_player.html")
+    return render(request, "home.html")
 

@@ -1,20 +1,17 @@
 
 h1 {
-    margin: 10px;
     font-size: 3em;
+    margin: 24px;
 }
-
 .login_logout {
     position: absolute;
     top: 10px;
     right: 20px;
     color: #fff
 }
-
 .login_logout:hover {
     color: darkorchid;
 }
-
 .top_nav {
     background-color: #0066ff;
     overflow: hidden;
@@ -23,9 +20,10 @@ h1 {
     float: left;
     color: white;
     text-align: center;
-    padding: 14px 16px;
+    padding: 14px 36px;
     text-decoration: none;
-    font-size: 17px;
+    font-size: 2em;
+    border-right: solid 2px white;
 }
 .top_nav a:hover {
     background-color: #00ccff !important;
@@ -35,7 +33,6 @@ h1 {
     background-color: darkorchid;
     color: white;
 }
-
 body {
     background-color: black;
     color: white;

@@ -17,10 +17,10 @@
 		{% endif %}
 	</header>
     <div class="top_nav">
-        <a class="active_nav" href="{% url 'app:home' %}">Home</a>
-        <a href="{% url 'app:rules' %}">Rules</a>
-        <a href="{% url 'app:leaderboard' %}">Leaderboard</a>
-        <a href="{% url 'app:contact' %}">Contact</a>
+        <a id="home_nav" href="{% url 'app:home' %}">Home</a>
+        <a id="rules_nav" href="{% url 'app:rules' %}">Rules</a>
+        <a id="leaderboard_nav" href="{% url 'app:leaderboard' %}">Leaderboard</a>
+        <a id="contact_nav" href="{% url 'app:contact' %}">Contact</a>
     </div>
 	<div id="content_block">
 		{% block content %}{% endblock %}
@@ -28,3 +28,4 @@
 	{% block extra_body %}{% endblock %}
 </body>
 </html>
+

@@ -12,19 +12,15 @@ class Eye {
         this.vy = 1
         this.o_height = 30
         this.height = 30
+        this.ry = this.height/2
         this.o_width = 60
         this.width = 60
+        this.rx = this.width/2
         this.move_cooldown = 30
         this.shot_cooldown = 120
         this.shots = []
         this.stun_ct = 0
         this.throb = 0
-    }
-    cx() {
-        return this.x_pos
-    }
-    cy() {
-        return this.y_pos
     }
     update(ground, hurt_count, enemies) {
         if (this.x_pos + this.o_width/2 > ground.width * 0.9) {
@@ -97,6 +93,9 @@ class Eye {
         }
         this.blink_count -= 1
         if (this.blink_count === 30) return true
+    }
+    checkShotInEllipse(shot) {
+        return (shot.cx() - this.x_pos)**2 * this.ry**2 + (shot.cy() - this.y_pos)**2 * this.rx**2 <= this.rx**2 * this.ry**2
     }
     draw(world_ctx, hurt_count) {
         if (this.life === 0) {

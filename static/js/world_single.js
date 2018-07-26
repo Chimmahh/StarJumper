@@ -26,11 +26,9 @@ class World {
         this.eyes = []
         this.eye_hurt_count = 0
         this.trans_x = 0
-
         this.ground = new Rectangle(0, this.height - this.ground_height, this.width, this.ground_height, 'green')
         this.platforms.push(this.ground)
         this.player = new StarJumper(sword_cnv.width/2 - 20, sword_cnv.height-this.ground_height - 40, 'white')
-
         ///// STARS /////
         let x, y
         for (let i=0; i<level*8; i++) {
@@ -341,7 +339,6 @@ class World {
                 } else {
                     update_result = this.enemies[i].update()
                 }
-
                 ///// CHECK IF PLAYER KILLED ENEMY ON SWORD /////
                 let sword_hit = checkCTX(this.enemies[i], this.sword_cnv.width, this.sword_ctx_data, this.trans_x)
                 if (sword_hit) {
@@ -396,6 +393,22 @@ class World {
                                 }
                             }
                         }
+                        ///// CHECK IF SHOT HITS EYE /////
+                        if (this.eye_hurt_count < 0) {
+                            for (let k=0; k<this.eyes.length; k++) {
+                                if (this.eyes[k].life > 0) {
+                                    if (this.eyes[k].checkShotInEllipse(this.player.shots[j])) {
+                                        this.eyes[k].life -= 1
+                                        if (this.eyes[0].life + this.eyes[1].life === 0) this.player.victory = true
+                                        this.eyes[k].height -= 3
+                                        this.eyes[k].o_height -= 3
+                                        this.eye_hurt_count = 90
+                                        this.eyes[k].o_height
+                                    }
+                                }
+                            }
+                        }
+
                     }
                     ///// IF ENEMY AND PLAYER COLLIDE /////
                     if (this.player.hurt_count < 0 && this.player.health > 0 && this.enemies[i].stun_ct < 0) {

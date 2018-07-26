@@ -1,10 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
 
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Star Jumper Rules{% endblock %}
+
+{% block header %}Rules{% endblock %}
+
+{% block extra_body %}
+    <script>
+        let home_nav = document.querySelector('#home_nav')
+        let rules_nav = document.querySelector('#rules_nav')
+        let leaderboard_nav = document.querySelector('#leaderboard_nav')
+        let contact_nav = document.querySelector('#contact_nav')
+
+        home_nav.className = ''
+        rules_nav.className = 'active_nav'
+        leaderboard_nav.className = ''
+        contact_nav.className = ''
+    </script>
+{% endblock %}
