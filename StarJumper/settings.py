@@ -56,7 +56,7 @@ ASGI_APPLICATION = 'StarJumper.routing.application'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '192.168.1.45',
+    'starjumper.pdxcodeguild.com',
     'localhost',
     '127.0.0.1',
     'star-jumper-211217.appspot.com',
