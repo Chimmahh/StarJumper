@@ -160,10 +160,7 @@ LOGIN_URL = '/app/login_register/'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
-if os.name == 'nt':
-    STATIC_URL = '/static/'
-else:
-    STATIC_URL = 'https://storage.googleapis.com/starjumper-static/static/'
+STATIC_URL = '/static/'
 
 # STATIC_ROOT = '/static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static')
