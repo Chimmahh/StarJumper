@@ -2,13 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Star Jumper lounge</title>
+    <title>Star Jumper Lounge</title>
+    {% load staticfiles %}
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+    <style>
+        body {
+            margin: 20px;
+            background-color: black;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+        }
+        a {
+            line-height: 30px;
+            text-decoration: none;
+            color: white;
+        }
+        #back_button {
+            padding: 5px;
+            border: solid 2px white;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-    <ul>
-        {% for game in games %}
-            <li><a href="{% url 'app:play' game.id %}">{{ game.name }}</a></li>
-        {% endfor %}
-    </ul>
+	<div id="content_block">
+        <div>Select a game</div>
+        <ul>
+            {% for game in games %}
+                <li><a href="{% url 'app:multiplayer' game.id %}">{{ game.name }}</a></li>
+            {% endfor %}
+        </ul>
+	</div>
+    <a href="{% url 'app:home' %}" id="back_button">Back</a>
 </body>
 </html>

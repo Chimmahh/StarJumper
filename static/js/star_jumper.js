@@ -233,7 +233,7 @@ class StarJumper extends Rectangle {
             if (this.y_pos + this.height >= platforms[0].y_pos) {
                 this.y_pos = platforms[0].y_pos - this.height
             }
-            ///// HIT DOWN KEY, S, OR SPACE TO ADD STAR UNDER STAR JUMPER /////
+            ///// HIT DOWN KEY, S, OR SPACE TO PLACE STAR UNDER STAR JUMPER /////
             if (this.action.type === 'down' && this.star_cooldown < 0) {  // && this.star_count > 0
                 ///// CHECK PRACTICE MODE STEP /////
                 if (world.play_mode === 'practice' && step_name == 'Place') {

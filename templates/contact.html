@@ -5,7 +5,18 @@
 
 {% block header %}Contact{% endblock %}
 
+{% block content %}
+    <p>Bugs? Suggestions? Job offers?</p>
+    <p>Contact Tim Wilson</p>
+    <p>timwilsonr@gmail.com</p>
+{% endblock %}
+
 {% block extra_body %}
+    <style>
+        p {
+            margin: 30px
+        }
+    </style>
     <script>
         let home_nav = document.querySelector('#home_nav')
         let practice_nav = document.querySelector('#practice_nav')

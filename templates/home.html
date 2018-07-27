@@ -10,6 +10,7 @@
         flex: 1;
         display: flex;
         font-size: 3em;
+        color: white;
         border: 2px solid white;
         border-radius: 10px;
         text-align: center;
@@ -20,6 +21,7 @@
     .btn_text {
         flex: 1;
         margin: auto;
+        line-height: 80px;
     }
     .big_bt:visited {
         color: white;
@@ -33,7 +35,7 @@
 
 {% extends "base.html" %}
 
-{% block title %}Star Jumper Home{% endblock %}
+{% block title %}Star Jumper Play{% endblock %}
 
 {% block header %}Star Jumper{% endblock %}
 
@@ -42,9 +44,9 @@
         <a href="{% url 'app:single_player' %}" class="big_bt">
             <div class="btn_text">Single Player</div>
         </a>
-        <div class="big_bt">
+        <a href="{% url 'app:lounge' %}" class="big_bt">
             <div class="btn_text">Multiplayer</div>
-        </div>
+        </a>
     </div>
 {% endblock %}
 
@@ -60,5 +62,4 @@
         leaderboard_nav.className = ''
         contact_nav.className = ''
     </script>
-
 {% endblock %}

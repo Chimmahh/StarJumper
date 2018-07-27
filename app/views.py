@@ -74,9 +74,9 @@ def single_player(request):
 
 
 @login_required
-def multi_player(request, game_id):
+def multiplayer(request, game_id):
     game = get_object_or_404(Game, pk=game_id)
-    return render(request, "multi_player.html", {"game": game})
+    return render(request, "multiplayer.html", {"game": game})
 
 @login_required
 def single_score(request):
