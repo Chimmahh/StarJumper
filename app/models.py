@@ -1,6 +1,7 @@
 from django.db import models
 from datetime import datetime
 from django.contrib.auth.models import User
+from django.utils import timezone
 import json
 
 class GameType(models.Model):
@@ -48,7 +49,7 @@ class GamePlayer(models.Model):
 
 class SinglePlayerScore(models.Model):
     player = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateTimeField(default=datetime.now())
+    date = models.DateTimeField(default=timezone.now())
     level = models.IntegerField()
     score = models.IntegerField()
 
