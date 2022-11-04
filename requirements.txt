@@ -38,7 +38,7 @@ requests==2.18.4
 requests-oauthlib==1.0.0
 setuptools==40.0.0
 six==1.11.0
-Twisted==18.4.0
+Twisted==22.10.0
 txaio==2.10.0
 urllib3==1.22
 zope.interface==4.5.0
